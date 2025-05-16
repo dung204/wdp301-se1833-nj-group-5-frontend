@@ -1,0 +1,41 @@
+import { Meta } from '@storybook/blocks';
+
+<Meta title="Internationalization (i18n)" />
+
+# Internationalization (i18n)
+
+## 1. Working with i18n messages
+
+The i18n messages are JSON files stored in the `messages/` folder. The file names are the language codes (e.g. `en.json`, `vi.json`, etc.) and the contents of the files are the translations for the messages in that language. The structure of the files is as follows:
+
+```json
+{
+  "base": {
+    "components": {
+      "DatePicker": {
+        "placeholder": "Pick a date"
+      }
+      // ... other components
+    }
+    // ...
+  },
+  "modules": {
+    "auth": {
+      "components": {
+        "LoginForm": {
+          // ... messages
+        }
+        // ... other components
+      },
+      "pages": {
+        "Login": {
+          "title": "Login",
+          "description": "Please enter your credentials to login."
+        }
+        // ... other pages
+      }
+      // ...
+    }
+  }
+}
+```

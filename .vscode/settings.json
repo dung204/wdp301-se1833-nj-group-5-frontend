@@ -1,0 +1,4 @@
+{
+  "eslint.useFlatConfig": true,
+  "tailwindCSS.classFunctions": ["cva", "cn", "cx", "clsx", "classNames", "classnames", "twMerge"]
+}

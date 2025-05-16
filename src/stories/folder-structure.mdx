@@ -1,0 +1,131 @@
+import { Meta } from '@storybook/blocks';
+
+<Meta title="Folder structure" />
+
+# Folder structure
+
+### Tables of contents
+
+- [1. The `src` folder](#1-the-src-folder)
+  - [1.1. Explanation](#11-explanation)
+  - [1.2. The difference between `base/` and `modules/`](#12-the-difference-between-base-and-modules)
+- [2. Outside the `src` folder](#2-outside-the-src-folder)
+  - [2.1. Explanation](#21-explanation)
+
+## 1. The `src` folder:
+
+The `src` folder is the primary folder for the app since it contains all the source code for the app. The structure of the `src` folder is as follows:
+
+```
+src/
+├── app/
+│   ├── api/
+│   │   ├── auth/
+│   │   └── [...path]/
+├── base/
+│   ├── components/
+│   │   ├── ui/
+│   │   └── layouts/
+│   ├── configs/
+│   ├── hooks/
+│   ├── i18n/
+│   ├── lib/
+│   ├── providers/
+│   ├── styles/
+│   ├── types/
+│   └── utils/
+├── modules/
+│   ├── <module-name>/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   ├── services/
+│   │   ├── types/
+│   │   └── (...some other folders as in src/base/)
+├── stories/
+└── middleware.ts
+```
+
+### 1.1. Explanation:
+
+- `app/`: This folder serves as the router for the app:
+  - `api/`: This is where <a href='https://nextjs.org/docs/app/building-your-application/routing/route-handlers' target='_blank'>Route Handlers</a> are defined, which are specialized API endpoints that allow the client-side to perform authentication and communicate with other APIs (including the backend).
+    - `auth/`: Handling authentication logic: setting auth tokens in cookies & deleting them from cookies.
+    - `[...path]/`: Accepting all API calls from the client-side and forwarding them to the backend. If an API call requires authentication, the access token from the cookies is retrieved (or refreshed if expired) and bind to the request before forwarding it to the backend.
+- `base/`: Contains the base (common) components, hooks, providers, and other shared resources that are used across the app.
+  - `components/`:
+    - `ui/`: Contains common UI pieces that can be composed into larger components.
+    - `layouts/`: Contains the layout components that are used to structure the pages.
+  - `configs/`: Contains the configuration files for the app (e.g. environment variables and other global settings).
+  - `hooks/`: Contains custom React hooks.
+  - `i18n/`: Contains the internationalization (i18n) files for the app, such as translations and language settings.
+  - `lib/`: Contains wrappers for third-party libraries.
+  - `providers/`: Contains React context providers that are used to manage global state or provide data to different parts of the app.
+  - `styles/`: Contains the global styles for the app, such as CSS and Tailwind configuration.
+  - `types/`: Contains the TypeScript types. Interfaces and enums are also defined here.
+- `modules/`: This folder contains modules, divided according to the different business domains of the application. Each module is an independent unit that can be developed autonomously. The internal structure of each module is similar to base/, however, the subfolders may vary.
+- `stories/`: This folder contains the Storybook stories & documentation for the components. Each story demonstrates how to use a component and its different states.
+- `middleware.ts`: This file is used to handle authentication for the app. It checks if the user is authenticated before allowing access to certain pages, or redirects to another page if not. It also handles token refresh logic.
+
+### 1.2. The difference between `base/` and `modules/`:
+
+- `base/` contains the low-level, generic, more technical building blocks of the app. They are not specific to any business domain and are used across the app.
+- `modules/` contains the high-level, business-specific components and logic. They are specific to a certain business domain and are used to build the app's features. Each module can be developed independently and can have its own set of components, pages, services, and types.
+
+**For example**:
+
+- The `<Form>` component in `base/components/ui/` is a generic form component. It handles the form state, fields validation, and submission logic. It can be used to create any form in the app, regardless of its purpose or content.
+- Meanwhile, the `<LoginForm>` component in `modules/auth/components/` is a specific implementation of a form that is used for user login. It uses the `<Form>` component from `base/components/ui/` to handle the form state and submission, but it also has its own specific fields (email & password) and validation logic.
+
+## 2. Outside the `src` folder:
+
+The `src` folder is the primary folder for the app, but there are also some other important files and folders outside of it:
+
+```
+├── .husky/
+├── .next/
+├── .storybook/
+├── .vscode/
+├── messages/
+├── public/
+├── .editorconfig
+├── .env
+├── .env.example
+├── .gitignore
+├── .prettierrc
+├── commitlint.config.mjs
+├── components.json
+├── eslint.config.mjs
+├── lint-staged.config.mjs
+├── next-intl.d.ts
+├── next.config.ts
+├── package.json
+├── pnpm-lock.yaml
+├── postcss.config.mjs
+├── README.md
+└── tsconfig.json
+```
+
+### 2.1. Explanation:
+
+- `.husky/`: This folder contains the Husky configuration files. Husky is a tool for handling Git hooks, which are scripts that run at certain points in the Git workflow (e.g. before committing or pushing code).
+- `.next/`: This folder is generated by Next.js and contains the build artifacts for the app. It is created when the app is built or run in development mode. <span style={{ color: 'red' }}>This folder should not be modified manually</span>.
+- `.storybook/`: This folder contains the Storybook configuration files.
+- `.vscode/`: This folder contains the shared Visual Studio Code configuration files.
+- `messages/`: This folder contains the i18n translation files for the app.
+- `public/`: This folder contains the static assets for the app, such as images, fonts, and other files that are served directly to the client.
+- `.editorconfig`: This file is used to define and maintain consistent coding styles across different editors and IDEs.
+- `.env`: This file contains the environment variables for the app. This file is already ignored by Git.
+- `.env.example`: This file is a template for the `.env` file. It is used to provide a reference for developers to know which environment variables are required for the app.
+- `.gitignore`: This file specifies the files and folders that should be ignored by Git.
+- `.prettierrc`: This file contains the configuration for Prettier, a code formatter.
+- `commitlint.config.mjs`: This file contains the configuration for commitlint, a tool for linting commit messages.
+- `components.json`: This file contains the configuration for shadcn/ui, a component library.
+- `eslint.config.mjs`: This file contains the configuration for ESLint, a tool for linting JavaScript and TypeScript code.
+- `lint-staged.config.mjs`: This file contains the configuration for lint-staged, a tool for running linters on staged files in Git.
+- `next-intl.d.ts`: This file contains the TypeScript definitions for the next-intl library, which is used for internationalization (i18n) in Next.js apps.
+- `next.config.ts`: This file contains the configuration for Next.js. It is used to customize the behavior of the Next.js framework.
+- `package.json`: This file contains the metadata for the project, such as the name, version, and dependencies. It is used to manage the project's dependencies and scripts.
+- `pnpm-lock.yaml`: This file is generated by pnpm, a package manager. It contains the exact versions of the dependencies used in the project.
+- `postcss.config.mjs`: This file contains the configuration for PostCSS, a tool for transforming CSS with JavaScript.
+- `README.md`: This file is the starting point of the project. It is used to provide information about the project, such as how to install and run it.
+- `tsconfig.json`: This file contains the configuration for TypeScript.

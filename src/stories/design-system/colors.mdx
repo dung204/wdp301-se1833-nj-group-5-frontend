@@ -1,0 +1,49 @@
+import { ColorItem, ColorPalette, Meta } from '@storybook/blocks';
+import colors from 'tailwindcss/colors';
+
+<Meta title="Design System/Colors" />
+
+# Colors
+
+<ColorPalette>
+  <ColorItem
+    title="Slate"
+    subtitle="The primary color"
+    colors={Object.keys(colors.slate).reduce(
+      (acc, key) => ({ ...acc, ...{ [`slate-${key}`]: colors.slate[key] } }),
+      {},
+    )}
+  />
+  <ColorItem
+    title="Danger"
+    subtitle="The color for errors"
+    colors={Object.keys(colors.red).reduce(
+      (acc, key) => ({ ...acc, ...{ [`danger-${key}`]: colors.red[key] } }),
+      {},
+    )}
+  />
+  <ColorItem
+    title="Success"
+    subtitle="The color for success messages"
+    colors={Object.keys(colors.green).reduce(
+      (acc, key) => ({ ...acc, ...{ [`success-${key}`]: colors.green[key] } }),
+      {},
+    )}
+  />
+  <ColorItem
+    title="Success"
+    subtitle="The color for success messages"
+    colors={Object.keys(colors.green).reduce(
+      (acc, key) => ({ ...acc, ...{ [`success-${key}`]: colors.green[key] } }),
+      {},
+    )}
+  />
+  <ColorItem
+    title="Warning"
+    subtitle="The color for warning messages"
+    colors={Object.keys(colors.yellow).reduce(
+      (acc, key) => ({ ...acc, ...{ [`warning-${key}`]: colors.yellow[key] } }),
+      {},
+    )}
+  />
+</ColorPalette>
