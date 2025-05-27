@@ -80,10 +80,8 @@ export function VipBenefitsTable({ programInfo }: VipBenefitsTableProps) {
   return (
     <Card className="p-6">
       <div className="mb-6">
-        <h2 className="mb-2 text-2xl font-bold text-white drop-shadow-sm">
-          VIP Benefits Comparison
-        </h2>
-        <p className="text-gray-600">
+        <h2 className="mb-2 text-2xl font-bold">VIP Benefits Comparison</h2>
+        <p className="text-muted-foreground">
           Compare the exclusive benefits available at each VIP tier level.
         </p>
       </div>
@@ -126,15 +124,15 @@ export function VipBenefitsTable({ programInfo }: VipBenefitsTableProps) {
         </Table>
       </div>
 
-      <div className="mt-6 rounded-lg bg-gray-50 p-4">
-        <h3 className="mb-2 font-semibold text-gray-900">Tier Requirements</h3>
+      <div className="bg-muted/50 mt-6 rounded-lg p-4">
+        <h3 className="mb-2 font-semibold">Tier Requirements</h3>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {tierOrder.map((tier) => (
             <div key={tier} className="text-center">
               <Badge variant="outline" className={getTierBadgeColor(tier)}>
                 {tier.charAt(0).toUpperCase() + tier.slice(1)}
               </Badge>
-              <p className="mt-1 text-sm text-gray-600">
+              <p className="text-muted-foreground mt-1 text-sm">
                 {programInfo.vipRequirements[tier]} bookings
               </p>
             </div>

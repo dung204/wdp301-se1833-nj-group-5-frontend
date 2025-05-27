@@ -10,7 +10,7 @@ export function VipSystemExplanation() {
       <div className="mb-8 text-center">
         <div className="mb-4 flex items-center justify-center gap-2">
           <Crown className="h-8 w-8 text-yellow-500" />
-          <h2 className="text-2xl font-extrabold tracking-tight text-white">
+          <h2 className="text-2xl font-extrabold tracking-tight text-gray-900 dark:text-gray-100">
             How the VIP System Works
           </h2>
         </div>

@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 
+import { AppHeader } from '@/base/components/layouts/app-header';
+
 import { ProgramEnhancementBanner } from '../components/program-enhancement-banner';
 import { VipBenefitsTable } from '../components/vip-benefits-table';
 import { VipDealsCta } from '../components/vip-deals-cta';
@@ -62,15 +64,12 @@ export function LoyaltyProgramPage() {
 
   return (
     <div className="container mx-auto space-y-8 px-4 py-8">
-      <div className="mb-8 text-center">
-        <h1 className="mb-2 text-3xl font-extrabold tracking-tight text-white">
-          VIP Loyalty Program
-        </h1>
-        <p className="mx-auto max-w-2xl text-gray-600">
-          Welcome to our exclusive VIP program. Track your progress, discover benefits, and unlock
-          amazing perks as you advance through our tier system.
-        </p>
-      </div>
+      {/* Header with Theme Toggle */}
+      <AppHeader
+        title="VIP Loyalty Program"
+        description="Welcome to our exclusive VIP program. Track your progress, discover benefits, and unlock amazing perks as you advance through our tier system."
+        className="mb-8"
+      />
 
       {/* VIP Status Card */}
       <VIPStatusCard userStatus={userStatus} vipRequirements={programInfo.vipRequirements} />
