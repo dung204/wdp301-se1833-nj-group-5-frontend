@@ -1,5 +1,6 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import { ArrowLeftIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -17,7 +18,11 @@ import { LoginForm } from '../components/login-form';
 
 export function LoginPage() {
   const router = useRouter();
-
+  const queryClient = useQueryClient();
+  const handleLoginSuccess = () => {
+    queryClient.invalidateQueries({ queryKey: ['users', 'profile'] });
+    router.replace('/');
+  };
   return (
     <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
       <div className="w-full max-w-sm">
@@ -34,7 +39,8 @@ export function LoginPage() {
               <CardDescription>Enter your email below to login to your account</CardDescription>
             </CardHeader>
             <CardContent>
-              <LoginForm onLoginSuccess={() => router.replace('/private')} />
+              {/* <LoginForm onLoginSuccess={() => router.replace('/private')} /> */}
+              <LoginForm onLoginSuccess={handleLoginSuccess} />
             </CardContent>
           </Card>
         </div>

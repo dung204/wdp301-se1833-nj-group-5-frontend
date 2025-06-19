@@ -77,7 +77,7 @@ export async function middleware(request: NextRequest) {
 
 async function handleRefreshToken(refreshToken: string) {
   // Should not use authService, since that service is for client side
-  const res = await fetch(`${env.NEXT_PUBLIC_API_URL}/auth/refresh-token`, {
+  const res = await fetch(`${env.API_URL}/auth/refresh-token`, {
     method: 'POST',
     body: JSON.stringify({ refreshToken }),
   });

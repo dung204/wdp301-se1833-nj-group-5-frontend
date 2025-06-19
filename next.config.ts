@@ -3,6 +3,9 @@ import createNextIntlPlugin from 'next-intl/plugin';
 
 const nextConfig: NextConfig = {
   /* config options here */
+  images: {
+    domains: ['example.com', 'shac.vn'], // 👈 Thêm domain này vào đây
+  },
 };
 
 const withNextIntl = createNextIntlPlugin({

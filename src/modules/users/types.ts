@@ -3,14 +3,14 @@ import { z } from 'zod';
 import { BaseEntity } from '@/base/types';
 
 export interface User extends BaseEntity {
-  firstName: string;
-  lastName: string;
+  fullName: string;
   address: string | null;
+  role: string;
+  email: string;
 }
 
 export const createUserSchema = z.object({
-  firstName: z.string().nonempty('First name is required'),
-  lastName: z.string().nonempty('Last name is required'),
+  fullName: z.string().nonempty('Full name is required'),
 });
 
 export type CreateUserSchema = z.infer<typeof createUserSchema>;
