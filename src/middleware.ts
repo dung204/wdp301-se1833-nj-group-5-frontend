@@ -3,8 +3,9 @@ import { NextURL } from 'next/dist/server/web/next-url';
 import { NextRequest, NextResponse } from 'next/server';
 import { pathToRegexp } from 'path-to-regexp';
 
-import { env } from '@/base/config';
 import { LoginSuccessResponse, RefreshTokenSuccessResponse } from '@/modules/auth/types';
+
+import { envServer } from './base/config/env-server.config';
 
 export const config = {
   /**
@@ -18,7 +19,7 @@ export const config = {
   matcher: '/((?!api|_next/static|_next/image|.*\\..*).*)',
 };
 
-const privateRoutes = ['/private'];
+const privateRoutes = ['/private', '/user/*path'];
 
 export async function middleware(request: NextRequest) {
   const accessToken = request.cookies.get('accessToken')?.value;
@@ -26,18 +27,11 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
   const redirectUrl = request.nextUrl.clone();
-  const isAuthRoute = pathname.startsWith('/auth');
   const isPrivateRoute = privateRoutes.some((route) => pathToRegexp(route).regexp.test(pathname));
 
   try {
     const { exp } = decodeJwt(accessToken ?? '');
     if (exp! * 1000 < Date.now()) throw new Error();
-
-    // When access token is valid, users can not access to auth routes
-    if (isAuthRoute) {
-      redirectUrl.pathname = '/';
-      return NextResponse.redirect(redirectUrl);
-    }
 
     // Continue if the route is public
     return NextResponse.next();
@@ -45,18 +39,12 @@ export async function middleware(request: NextRequest) {
     try {
       const payload = await handleRefreshToken(refreshToken ?? '');
 
-      // After success token refresh, users stay logged in and can not access to auth routes
-      if (isAuthRoute) {
-        redirectUrl.pathname = '/';
-        return setCookieAndRedirect(redirectUrl, payload);
-      }
-
       // For private & public routes, continue after success token refresh
       return setCookieAndRedirect(request.nextUrl, payload);
     } catch (_refreshTokenError) {
       // When refresh token is invalid, delete cookies & redirect to login page if the route is private
       if (isPrivateRoute) {
-        redirectUrl.pathname = '/auth/login';
+        redirectUrl.pathname = '/';
         return deleteCookieAndRedirect(redirectUrl);
       }
 
@@ -77,12 +65,10 @@ export async function middleware(request: NextRequest) {
 
 async function handleRefreshToken(refreshToken: string) {
   // Should not use authService, since that service is for client side
-  const res = await fetch(`${env.NEXT_PUBLIC_API_URL}/auth/refresh-token`, {
+  const res = await fetch(`${envServer.API_URL}auth/refresh`, {
     method: 'POST',
     body: JSON.stringify({ refreshToken }),
   });
-
-  if (!res.ok) throw new Error();
 
   return res.json() as Promise<RefreshTokenSuccessResponse>;
 }
@@ -96,7 +82,7 @@ function setCookieAndRedirect(url: NextURL, payload: LoginSuccessResponse) {
       'Set-Cookie': [
         `accessToken=${accessToken}; Path=/; Secure; Max-Age=31536000; HttpOnly; SameSite=Lax`,
         `refreshToken=${refreshToken}; Path=/; Secure; Max-Age=31536000; HttpOnly; SameSite=Lax`,
-        `user=${JSON.stringify(user)}; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT`,
+        `user=${JSON.stringify({ ...user, fullName: encodeURIComponent(user.fullName ?? '') })}; Path=/; Secure; Max-Age=31536000; HttpOnly; SameSite=Lax`,
       ],
     },
   });
