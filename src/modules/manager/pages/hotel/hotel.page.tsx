@@ -9,13 +9,15 @@ import {
   MapPin,
   MoreHorizontal,
   Plus,
+  Star,
   Trash2,
   User,
 } from 'lucide-react';
 // import { Hotel, hotelService, CreateHotelSchema, } from "@/modules/users/services/hotel.service"
 import Image from 'next/image';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
+import { Badge } from '@/base/components/ui/badge';
 import { Button } from '@/base/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/base/components/ui/card';
 import {
@@ -31,8 +33,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/base/components/ui/dropdown-menu';
-import { Input } from '@/base/components/ui/input';
 import { Label } from '@/base/components/ui/label';
+import { Separator } from '@/base/components/ui/separator';
 import {
   Table,
   TableBody,
@@ -47,7 +49,7 @@ import { AddEditDialog } from './components/add-edit-dialog';
 import { useHotelMutations } from './hooks/use-hotel-mutations';
 
 export function HotelManagement() {
-  const [hotels, setHotels] = useState<Hotel[]>([]);
+  // const [hotels, setHotels] = useState<Hotel[]>([]);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [editOrAddDialogOpen, setEditOrAddDialogOpen] = useState(false);
   const [formMode, setFormMode] = useState<'add' | 'edit'>('add');
@@ -55,17 +57,17 @@ export function HotelManagement() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [hotelToDelete, setHotelToDelete] = useState<Hotel | null>(null);
 
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
   // Update query to use searchParams
   const { data: hotelData, isLoading } = useQuery({
-    queryKey: ['hotels'],
-    queryFn: () => hotelService.getAllHotels(),
+    queryKey: ['hotels', page, pageSize],
+    queryFn: () =>
+      hotelService.getAllHotels({
+        page,
+        pageSize,
+      }),
   });
-
-  useEffect(() => {
-    if (hotelData?.data) {
-      setHotels(hotelData.data);
-    }
-  }, [hotelData]);
 
   // Add mutation
   const { createHotel, updateHotel, deleteHotel } = useHotelMutations({
@@ -162,6 +164,7 @@ export function HotelManagement() {
       services: hotelFormData.services,
       rating: hotelFormData.rating,
     };
+
     if (formMode === 'add') {
       createHotel.mutate(payload);
     } else {
@@ -193,29 +196,27 @@ export function HotelManagement() {
           Thêm khách sạn
         </Button>
       </div>
-      <Card>
+      {/* <Card>
         <CardContent className="space-y-4 p-4">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            {/* Search by name */}
             <div>
               <Label>Tìm theo tên</Label>
               <Input
                 placeholder="Nhập tên khách sạn..."
-                // onChange={(e) => handleSearch(e.target.value)}
+              onChange={(e) => handleSearch(e.target.value)}
               />
             </div>
 
-            {/* Filter by address */}
             <div>
               <Label>Địa chỉ</Label>
               <Input
                 placeholder="Nhập địa chỉ..."
-                // onChange={(e) => handleAddressFilter(e.target.value)}
+              onChange={(e) => handleAddressFilter(e.target.value)}
               />
             </div>
           </div>
         </CardContent>
-      </Card>
+      </Card> */}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -224,7 +225,7 @@ export function HotelManagement() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Tổng khách sạn</p>
-                <p className="text-2xl font-bold text-gray-900">{hotels.length}</p>
+                <p className="text-2xl font-bold text-gray-900">{hotelData?.data.length}</p>
               </div>
               <Building2 className="h-8 w-8 text-blue-600" />
             </div>
@@ -235,23 +236,10 @@ export function HotelManagement() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Đang hoạt động</p>
-                <p className="text-2xl font-bold text-green-600">{hotels.length}</p>
+                <p className="text-2xl font-bold text-green-600">{hotelData?.data.length}</p>
               </div>
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-100">
                 <div className="h-3 w-3 rounded-full bg-green-600"></div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Trang hiện tại</p>
-                <p className="text-2xl font-bold text-gray-900">{/* {page}/{totalPages} */}</p>
-              </div>
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100">
-                {/* <span className="text-sm font-medium text-gray-600">{page}</span> */}
               </div>
             </div>
           </CardContent>
@@ -278,7 +266,7 @@ export function HotelManagement() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {hotels.map((hotel) => (
+                {hotelData?.data.map((hotel) => (
                   <TableRow key={hotel.id} className="hover:bg-gray-50">
                     {/* <TableCell className="font-medium">{(page - 1) * PAGE_SIZE + index + 1}</TableCell> */}
                     <TableCell>
@@ -345,6 +333,53 @@ export function HotelManagement() {
               </TableBody>
             </Table>
           </div>
+          {hotelData && (
+            <div className="mt-4 flex items-center justify-between">
+              <span className="text-sm text-gray-600">
+                Trang {hotelData.metadata.pagination.currentPage} /{' '}
+                {hotelData.metadata.pagination.totalPage}
+              </span>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!hotelData.metadata.pagination.hasPreviousPage}
+                  onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                >
+                  Trang trước
+                </Button>
+
+                {/* Hiển thị số trang */}
+                {Array.from(
+                  { length: hotelData.metadata.pagination.totalPage },
+                  (_, i) => i + 1,
+                ).map((pageNumber) => (
+                  <Button
+                    key={pageNumber}
+                    variant={
+                      pageNumber === hotelData.metadata.pagination.currentPage
+                        ? 'default'
+                        : 'outline'
+                    }
+                    size="sm"
+                    onClick={() => setPage(pageNumber)}
+                  >
+                    {pageNumber}
+                  </Button>
+                ))}
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!hotelData.metadata.pagination.hasNextPage}
+                  onClick={() => setPage((prev) => prev + 1)}
+                >
+                  Trang sau
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
       {/* Add/Edit Dialog */}
@@ -358,79 +393,154 @@ export function HotelManagement() {
         isPending={isPending || isUpdating}
       />
 
-      {/* View Dialog */}
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
-        <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Eye className="h-5 w-5" />
-              Thông tin khách sạn
+        <DialogContent
+          aria-describedby={undefined}
+          className="max-h-[95vh] w-screen max-w-[90vw] overflow-y-auto p-0"
+        >
+          <DialogHeader className="rounded-t-lg bg-gradient-to-r from-emerald-600 to-teal-600 p-6 text-white">
+            <DialogTitle className="flex items-center gap-3 text-xl font-bold">
+              <div className="rounded-full bg-white/20 p-2">
+                <Eye className="h-5 w-5" />
+              </div>
+              Thông tin chi tiết khách sạn
             </DialogTitle>
+            {/* <DialogDescription>Thông tin chi tiết về khách sạn.</DialogDescription> */}
           </DialogHeader>
-          {selectedHotel && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="space-y-3">
-                  <div>
-                    <Label className="text-sm font-medium text-gray-600">Tên khách sạn</Label>
-                    <p className="text-lg font-semibold">{selectedHotel.name}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium text-gray-600">Chủ sở hữu</Label>
-                    <p className="flex items-center gap-2">
-                      <User className="h-4 w-4 text-gray-400" />
-                      {selectedHotel.owner.fullName}
-                    </p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium text-gray-600">Địa chỉ</Label>
-                    <p className="flex items-start gap-2">
-                      <MapPin className="mt-0.5 h-4 w-4 text-gray-400" />
-                      {selectedHotel.address}
-                    </p>
+
+          {/* Scrollable content */}
+          <div className="flex-1 overflow-y-auto p-6">
+            {selectedHotel && (
+              <div className="space-y-6">
+                <div className="space-y-6">
+                  {/* Ảnh khách sạn (chiếm toàn bộ chiều ngang) */}
+                  <div className="relative h-64 w-full overflow-hidden rounded-xl shadow-lg">
+                    {Array.isArray(selectedHotel.avatar) && selectedHotel.avatar[0] ? (
+                      <Image
+                        src={selectedHotel.avatar[0]}
+                        alt={selectedHotel.name}
+                        fill
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center bg-gray-100 text-gray-400">
+                        Không có ảnh
+                      </div>
+                    )}
                   </div>
 
-                  <div className="relative h-48 w-full flex-shrink-0 sm:w-64">
-                    <Image
-                      src={
-                        Array.isArray(selectedHotel.avatar)
-                          ? selectedHotel.avatar[0]
-                          : selectedHotel.avatar
-                      }
-                      alt={selectedHotel.name}
-                      fill
-                      className="object-cover"
-                    />
+                  {/* Thông tin khách sạn */}
+                  <div className="space-y-4 px-2">
+                    <div className="flex flex-wrap items-center justify-between gap-4">
+                      <h2 className="text-2xl font-bold text-gray-900">{selectedHotel.name}</h2>
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-1">
+                          <span className="text-lg font-semibold">{selectedHotel.rating}</span>
+                          <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                        </div>
+                        <Badge variant="secondary" className="bg-green-100 text-green-800">
+                          Đang hoạt động
+                        </Badge>
+                      </div>
+                    </div>
+
+                    {/* Địa chỉ */}
+                    <div className="flex items-start gap-2 text-gray-700">
+                      <MapPin className="mt-0.5 h-5 w-5 text-emerald-600" />
+                      <p>{selectedHotel.address}</p>
+                    </div>
+                    <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-900">
+                      <User className="h-5 w-5 text-gray-600" />
+                      Chủ sở hữu:
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium text-gray-900">{selectedHotel.owner.fullName}</p>
+                      </div>
+                    </h3>
+                    <div className="space-y-3"></div>
                   </div>
                 </div>
-                <div className="space-y-3">
-                  <div>
-                    <Label className="text-sm font-medium text-gray-600">Giờ check-in</Label>
-                    <p className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-gray-400" />
-                      {formatTime(selectedHotel.checkinTime.from)} -{' '}
-                      {formatTime(selectedHotel.checkinTime.to)}
-                    </p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium text-gray-600">Giờ check-out</Label>
-                    <p className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-gray-400" />
-                      {formatTime(selectedHotel.checkoutTime)}
-                    </p>
-                  </div>
-                </div>
+
+                <Separator />
+                <Card>
+                  <CardContent className="p-4">
+                    <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-900">
+                      <Clock className="h-5 w-5 text-gray-600" />
+                      Giờ hoạt động
+                    </h3>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between rounded-lg bg-blue-50 p-3">
+                        <div>
+                          <Label className="text-sm font-medium text-gray-600">Check-in</Label>
+                          <p className="font-semibold text-blue-700">
+                            {formatTime(selectedHotel.checkinTime.from)} -{' '}
+                            {formatTime(selectedHotel.checkinTime.to)}
+                          </p>
+                        </div>
+                        <Clock className="h-5 w-5 text-blue-600" />
+                      </div>
+                      <div className="flex items-center justify-between rounded-lg bg-orange-50 p-3">
+                        <div>
+                          <Label className="text-sm font-medium text-gray-600">Check-out</Label>
+                          <p className="font-semibold text-orange-700">
+                            {formatTime(selectedHotel.checkoutTime)}
+                          </p>
+                        </div>
+                        <Clock className="h-5 w-5 text-orange-600" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Amenities */}
+                <Card>
+                  <CardContent className="p-4">
+                    <h3 className="mb-4 text-lg font-semibold text-gray-900">
+                      Tiện nghi khách sạn
+                    </h3>
+                    <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+                      {selectedHotel.services.map((amenity, idx) => (
+                        <div
+                          key={idx}
+                          className="flex items-center gap-3 rounded-lg bg-gray-50 p-3 transition-colors hover:bg-gray-100"
+                        >
+                          <div className="h-2 w-2 rounded-full bg-emerald-500"></div>
+                          <span className="text-gray-700">{amenity}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Description */}
+                <Card>
+                  <CardContent className="p-4">
+                    <h3 className="mb-4 text-lg font-semibold text-gray-900">Mô tả khách sạn</h3>
+                    <div className="prose prose-gray max-w-none">
+                      <p className="leading-relaxed text-gray-700">
+                        {selectedHotel.description || 'Không có mô tả'}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
-              <div>
-                <Label className="text-sm font-medium text-gray-600">Mô tả</Label>
-                <p className="mt-1 rounded-lg bg-gray-50 p-3 text-gray-900">
-                  {selectedHotel.description || 'Không có mô tả'}
-                </p>
+            )}
+          </div>
+
+          {/* Footer */}
+          <DialogFooter className="border-t bg-gray-50 p-6">
+            <div className="flex w-full items-center justify-between">
+              <div className="flex items-center gap-4 text-sm text-gray-600">
+                <span>Cập nhật lần cuối: Hôm nay</span>
+                <Badge variant="outline" className="border-green-600 text-green-600">
+                  Đã xác thực
+                </Badge>
+              </div>
+              <div className="flex gap-3">
+                <Button variant="outline" onClick={() => setViewDialogOpen(false)}>
+                  Đóng
+                </Button>
               </div>
             </div>
-          )}
-          <DialogFooter>
-            <Button onClick={() => setViewDialogOpen(false)}>Đóng</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

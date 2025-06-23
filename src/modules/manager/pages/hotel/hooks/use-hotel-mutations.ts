@@ -1,7 +1,11 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
-import { UpdateHotelSchema, hotelService } from '@/modules/manager/services/hotel.service';
+import {
+  CreateHotelSchema,
+  UpdateHotelSchema,
+  hotelService,
+} from '@/modules/manager/services/hotel.service';
 
 export function useHotelMutations(options?: {
   onAddOrUpdateSuccess?: () => void;
@@ -10,7 +14,7 @@ export function useHotelMutations(options?: {
   const queryClient = useQueryClient();
 
   const createHotel = useMutation({
-    mutationFn: hotelService.createNewHotel,
+    mutationFn: (payload: CreateHotelSchema) => hotelService.createNewHotel(payload),
     onSuccess: () => {
       toast.success('Thêm khách sạn thành công');
       queryClient.invalidateQueries({ queryKey: ['hotels'] });

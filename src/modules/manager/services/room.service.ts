@@ -45,12 +45,24 @@ class RoomService extends HttpClient {
 export const createRoomSchema = z.object({
   name: z.string().min(1, 'Room name is required'),
   hotel: z.string().uuid('Hotel ID must be a valid UUID'),
-  rate: z.number().min(0, 'Rate must be a non-negative number'),
-  size: z.number().min(1, 'Size must be greater than 0'),
-  occupancy: z.number().min(1, 'Occupancy must be at least 1'),
+  rate: z.preprocess((val) => Number(val), z.number().min(100000, 'Rate from 100.000đ')),
+  size: z.preprocess((val) => Number(val), z.number().min(1, 'Size must be greater than 0')),
+  occupancy: z.preprocess((val) => Number(val), z.number().min(1, 'Occupancy must be at least 1')),
   services: z.array(z.string()).default([]),
-  images: z.array(z.string().url('Must be valid image URLs')).default([]),
-  maxQuantity: z.number().min(1, 'Maximum quantity must be at least 1'),
+  images: z.preprocess(
+    (val) =>
+      typeof val === 'string'
+        ? val
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean)
+        : [],
+    z.array(z.string().url()),
+  ),
+  maxQuantity: z.preprocess(
+    (val) => Number(val),
+    z.number().min(1, 'Maximum quantity must be at least 1'),
+  ),
 });
 
 export type CreateRoomSchema = z.infer<typeof createRoomSchema>;

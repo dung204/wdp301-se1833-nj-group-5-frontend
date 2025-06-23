@@ -2,20 +2,24 @@
 
 import { useQuery } from '@tanstack/react-query';
 import {
+  Badge,
   Banknote,
   Building2,
-  ChevronLeft,
-  ChevronRight,
+  DollarSign,
   Edit,
   Eye,
   MapPin,
+  Maximize,
   MoreHorizontal,
   Plus,
+  Star,
   Trash2,
   User,
+  Users,
   UsersRound,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import Image from 'next/image';
+import { useState } from 'react';
 
 import { Button } from '@/base/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/base/components/ui/card';
@@ -32,6 +36,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/base/components/ui/dropdown-menu';
+import { Separator } from '@/base/components/ui/separator';
 import {
   Table,
   TableBody,
@@ -47,21 +52,21 @@ import { AddEditRoomDialog } from './components/add-edit-room-dialog';
 import { useRoomMutations } from './hooks/use-room-mutations';
 
 export function RoomManagement() {
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
+
   const { data: roomData } = useQuery({
-    queryKey: ['rooms'],
-    queryFn: () => roomService.getAllRooms(),
+    queryKey: ['rooms', page, pageSize],
+    queryFn: () =>
+      roomService.getAllRooms({
+        page,
+        pageSize,
+      }),
   });
   const { data: hotelData } = useQuery({
     queryKey: ['hotels'],
     queryFn: () => hotelService.getAllHotels(),
   });
-  const [rooms, setRooms] = useState<Room[]>([]);
-
-  useEffect(() => {
-    if (roomData?.data) {
-      setRooms(roomData?.data);
-    }
-  }, [roomData]);
 
   const [addEditDialogOpen, setAddEditDialogOpen] = useState(false);
   const [formMode, setFormMode] = useState<'add' | 'edit'>('add');
@@ -76,6 +81,8 @@ export function RoomManagement() {
       setRoomToDelete(null);
     },
   });
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
 
   const [roomFormData, setRoomFormData] = useState<CreateRoomSchema>({
     name: '',
@@ -130,27 +137,22 @@ export function RoomManagement() {
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = (values: CreateRoomSchema) => {
     if (formMode === 'add') {
-      createRoom.mutate(roomFormData);
+      createRoom.mutate(values);
     } else if (formMode === 'edit' && editingRoom) {
-      updateRoom.mutate({ id: editingRoom.id, ...roomFormData });
+      updateRoom.mutate({ id: editingRoom.id, ...values });
     }
   };
   const [selectHotelId, setSelectedHotelId] = useState<string>('');
-  const filterRooms = rooms.filter((room) =>
+  const filterRooms = roomData?.data.filter((room) =>
     selectHotelId ? room.hotel.id === selectHotelId : true,
   );
-
   // Thêm handler cho việc thay đổi hotel
   const handleFilterHotel = (hotelId: string) => {
     setSelectedHotelId(hotelId);
     setPage(1);
   };
-  const PAGE_SIZE = 10;
-  const [page, setPage] = useState(1);
-  const paginated = filterRooms.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  const totalPages = Math.ceil(filterRooms.length / PAGE_SIZE);
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-6">
@@ -194,35 +196,31 @@ export function RoomManagement() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-gray-50">
-                  <TableHead className="font-semibold">#</TableHead>
                   <TableHead className="font-semibold">Tên phòng</TableHead>
                   <TableHead className="font-semibold">Khách sạn</TableHead>
                   <TableHead className="font-semibold">Chủ sở hữu</TableHead>
                   <TableHead className="font-semibold">Giá</TableHead>
                   <TableHead className="font-semibold">Số lượng người</TableHead>
                   <TableHead className="font-semibold">Số lượng tối đa</TableHead>
-                  <TableHead className="text-center font-semibold">Hành động</TableHead>
+                  <TableHead className="font-semibold">Hành động</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {paginated.map((room, index) => (
+                {filterRooms?.map((room) => (
                   <TableRow key={room.id} className="hover:bg-gray-50">
-                    <TableCell className="font-medium">
-                      {(page - 1) * PAGE_SIZE + index + 1}
-                    </TableCell>
                     <TableCell>
                       <div className="font-medium text-gray-900">{room.name}</div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center text-gray-600">
                         <MapPin className="mr-1 h-4 w-4" />
-                        <span className="max-w-[200px] truncate">{room.hotel.name}</span>
+                        <span className="max-w-[200px] truncate">{room.hotel?.name}</span>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center text-gray-600">
                         <User className="mr-1 h-4 w-4" />
-                        {room.hotel.owner.fullName}
+                        {room.hotel.owner?.fullName}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -260,7 +258,8 @@ export function RoomManagement() {
                         <DropdownMenuContent>
                           <DropdownMenuItem
                             onClick={() => {
-                              /* handleViewRoom(room) */
+                              setSelectedRoom(room);
+                              setViewDialogOpen(true);
                             }}
                           >
                             <Eye className="mr-2 h-4 w-4" />
@@ -289,45 +288,53 @@ export function RoomManagement() {
           </div>
 
           {/* Pagination */}
-          <div className="mt-6 flex items-center justify-between">
-            <div className="text-sm text-gray-600">
-              Hiển thị {(page - 1) * PAGE_SIZE + 1} -{' '}
-              {Math.min(page * PAGE_SIZE, filterRooms.length)} của {filterRooms.length} phòng
-            </div>
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-                disabled={page === 1}
-              >
-                <ChevronLeft className="mr-1 h-4 w-4" />
-                Trước
-              </Button>
-              <div className="flex items-center space-x-1">
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+          {roomData && (
+            <div className="mt-4 flex items-center justify-between">
+              <span className="text-sm text-gray-600">
+                Trang {roomData.metadata.pagination.currentPage} /{' '}
+                {roomData.metadata.pagination.totalPage}
+              </span>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!roomData.metadata.pagination.hasPreviousPage}
+                  onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                >
+                  Trang trước
+                </Button>
+
+                {/* Hiển thị số trang */}
+                {Array.from(
+                  { length: roomData.metadata.pagination.totalPage },
+                  (_, i) => i + 1,
+                ).map((pageNumber) => (
                   <Button
-                    key={pageNum}
-                    variant={page === pageNum ? 'default' : 'outline'}
+                    key={pageNumber}
+                    variant={
+                      pageNumber === roomData.metadata.pagination.currentPage
+                        ? 'default'
+                        : 'outline'
+                    }
                     size="sm"
-                    onClick={() => setPage(pageNum)}
-                    className="h-8 w-8 p-0"
+                    onClick={() => setPage(pageNumber)}
                   >
-                    {pageNum}
+                    {pageNumber}
                   </Button>
                 ))}
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!roomData.metadata.pagination.hasNextPage}
+                  onClick={() => setPage((prev) => prev + 1)}
+                >
+                  Trang sau
+                </Button>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage((prev) => (prev < totalPages ? prev + 1 : prev))}
-                disabled={page >= totalPages}
-              >
-                Sau
-                <ChevronRight className="ml-1 h-4 w-4" />
-              </Button>
             </div>
-          </div>
+          )}
         </CardContent>
       </Card>
       {/* Add/Edit Dialog */}
@@ -340,6 +347,150 @@ export function RoomManagement() {
         isPending={createRoom.isPending || updateRoom.isPending}
         hotels={hotelData?.data || []}
       />
+
+      <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
+        <DialogContent className="max-h-[95vh] max-w-4xl overflow-hidden p-0">
+          <div className="flex h-full flex-col">
+            {/* Header with gradient background */}
+            <DialogHeader className="rounded-t-lg bg-gradient-to-r from-blue-600 to-purple-600 p-6 text-white">
+              <DialogTitle className="flex items-center gap-3 text-xl font-bold">
+                <div className="rounded-full bg-white/20 p-2">
+                  <Eye className="h-5 w-5" />
+                </div>
+                Thông tin chi tiết phòng
+              </DialogTitle>
+            </DialogHeader>
+
+            {/* Scrollable content */}
+            <div className="flex-1 overflow-y-auto p-6">
+              {selectedRoom && (
+                <div className="space-y-6">
+                  {/* Room title and rating */}
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h2 className="mb-2 text-2xl font-bold text-gray-900">{selectedRoom.name}</h2>
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                        <span className="font-medium">{selectedRoom.rate}</span>
+                        <span>• Đánh giá xuất sắc</span>
+                      </div>
+                    </div>
+                    <Badge className="bg-green-100 px-3 py-1 text-green-800">Còn trống</Badge>
+                  </div>
+
+                  {/* Hotel info card */}
+                  <Card className="border-l-4 border-l-blue-500">
+                    <CardContent className="p-4">
+                      <h3 className="">
+                        Thuộc sở hữu của:{' '}
+                        <span className="mb-2 font-semibold text-gray-900">
+                          {' '}
+                          {selectedRoom.hotel.name}
+                        </span>
+                      </h3>
+                      <div className="flex items-start gap-2 text-gray-600">
+                        <MapPin className="mt-0.5 h-4 w-4 text-blue-500" />
+                        <span className="text-sm">{selectedRoom.hotel.address}</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Room details grid */}
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                    <Card className="p-4 text-center">
+                      <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
+                        <DollarSign className="h-6 w-6 text-blue-600" />
+                      </div>
+                      <div className="mb-1 text-2xl font-bold text-gray-900">
+                        {selectedRoom.rate.toLocaleString()}
+                      </div>
+                      <div className="text-sm text-gray-600">VNĐ / đêm</div>
+                    </Card>
+
+                    <Card className="p-4 text-center">
+                      <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
+                        <Maximize className="h-6 w-6 text-green-600" />
+                      </div>
+                      <div className="mb-1 text-2xl font-bold text-gray-900">
+                        {selectedRoom.size}
+                      </div>
+                      <div className="text-sm text-gray-600">m² diện tích</div>
+                    </Card>
+
+                    <Card className="p-4 text-center">
+                      <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-purple-100">
+                        <Users className="h-6 w-6 text-purple-600" />
+                      </div>
+                      <div className="mb-1 text-2xl font-bold text-gray-900">
+                        {selectedRoom.occupancy}
+                      </div>
+                      <div className="text-sm text-gray-600">người tối đa</div>
+                    </Card>
+                  </div>
+                  <Separator />
+                  {/* Services */}
+                  <div>
+                    <h3 className="mb-4 text-lg font-semibold text-gray-900">Dịch vụ bao gồm</h3>
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                      {selectedRoom.services && selectedRoom.services.length > 0 ? (
+                        selectedRoom.services.map((service, idx) => (
+                          <div
+                            key={`${service}-${idx}`}
+                            className="flex items-center gap-3 rounded-lg bg-gray-50 p-3"
+                          >
+                            <div className="h-2 w-2 rounded-full bg-green-500"></div>
+                            <span className="text-gray-700">{service}</span>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-gray-500 italic">Không có dịch vụ đặc biệt</div>
+                      )}
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  <div>
+                    <h3 className="mb-4 text-lg font-semibold text-gray-900">Hình ảnh phòng</h3>
+                    <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+                      {(Array.isArray(selectedRoom.images)
+                        ? selectedRoom.images
+                        : [selectedRoom.images]
+                      ).map((img, idx) => (
+                        <div
+                          key={idx}
+                          className="group relative aspect-square overflow-hidden rounded-lg shadow-md transition-shadow hover:shadow-lg"
+                        >
+                          <Image
+                            src={img || '/placeholder.svg'}
+                            alt={`Ảnh phòng ${idx + 1}`}
+                            fill
+                            className="object-cover transition-transform duration-300 group-hover:scale-105"
+                          />
+                          <div className="absolute inset-0 bg-black/0 transition-colors duration-300 group-hover:bg-black/20" />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <DialogFooter className="border-t bg-gray-50 p-6">
+              <div className="flex w-full items-center justify-between">
+                <div className="text-sm text-gray-600">Giá đã bao gồm thuế và phí dịch vụ</div>
+                <div className="flex gap-3">
+                  <Button variant="outline" onClick={() => setViewDialogOpen(false)}>
+                    Đóng
+                  </Button>
+                  <Button className="bg-blue-600 hover:bg-blue-700">Đặt phòng ngay</Button>
+                </div>
+              </div>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>

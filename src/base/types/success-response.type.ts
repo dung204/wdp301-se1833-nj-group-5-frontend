@@ -4,7 +4,7 @@ import type { Sorting } from './sorting.type';
 export type SuccessResponse<T> = T extends unknown[]
   ? {
       data: T;
-      meta: {
+      metadata: {
         pagination: Pagination;
         sorting: Sorting[];
       };

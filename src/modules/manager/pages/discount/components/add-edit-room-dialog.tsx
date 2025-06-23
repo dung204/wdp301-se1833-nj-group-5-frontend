@@ -10,29 +10,19 @@ import {
   DialogTitle,
 } from '@/base/components/ui/dialog';
 import { Form } from '@/base/components/ui/form';
-import { createRoomSchema } from '@/modules/manager/services/room.service';
+import { createDiscountSchema } from '@/modules/manager/services/discount.service';
 
-interface AddEditRoomDialogProps {
+interface AddEditDiscountDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   formMode: 'add' | 'edit';
-  defaultValues: z.infer<typeof createRoomSchema>;
-  onSubmit: (values: z.infer<typeof createRoomSchema>) => void;
+  defaultValues: z.infer<typeof createDiscountSchema>;
+  onSubmit: (values: z.infer<typeof createDiscountSchema>) => void;
   isPending: boolean;
   hotels: { id: string; name: string }[];
 }
 
-const AVAILABLE_SERVICES = [
-  'WiFi',
-  'Minibar',
-  'TV',
-  'Điều hòa',
-  'Máy sấy tóc',
-  'Bồn tắm',
-  'Bàn làm việc',
-];
-
-export function AddEditRoomDialog({
+export function AddEditDiscountDialog({
   open,
   onOpenChange,
   formMode,
@@ -40,82 +30,68 @@ export function AddEditRoomDialog({
   onSubmit,
   isPending,
   hotels,
-}: AddEditRoomDialogProps) {
+}: AddEditDiscountDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {formMode === 'add' ? <Plus className="h-5 w-5" /> : <Edit className="h-5 w-5" />}
-            {formMode === 'add' ? 'Thêm phòng mới' : 'Chỉnh sửa phòng'}
+            {formMode === 'add' ? 'Thêm mã giảm giá' : 'Chỉnh sửa mã giảm giá'}
           </DialogTitle>
         </DialogHeader>
 
         <Form
-          schema={createRoomSchema}
+          schema={createDiscountSchema}
           defaultValues={defaultValues}
           className="space-y-4"
           fields={[
             {
-              name: 'hotel',
+              name: 'amount',
+              type: 'text',
+              label: 'Phần trăm giảm giá (%) *',
+              placeholder: 'Nhập phần trăm (ví dụ: 10)',
+              disabled: isPending,
+            },
+            {
+              name: 'expiredTimestamp',
+              type: 'date',
+              label: 'Ngày hết hạn *',
+              placeholder: 'Chọn ngày hết hạn',
+              disabled: isPending,
+            },
+            {
+              name: 'applicableHotels',
               type: 'select',
-              label: 'Khách sạn *',
+              label: 'Khách sạn áp dụng *',
               placeholder: 'Chọn khách sạn',
-              options: [
-                { label: 'Chọn khách sạn', value: '' },
-                ...hotels.map((h) => ({ label: h.name, value: h.id })),
-              ],
-              disabled: isPending,
-            },
-            {
-              name: 'name',
-              type: 'text',
-              label: 'Tên phòng *',
-              placeholder: 'Nhập tên phòng',
-              disabled: isPending,
-            },
-            {
-              name: 'rate',
-              type: 'text',
-              label: 'Giá phòng *',
-              placeholder: 'Nhập giá phòng',
-              disabled: isPending,
-            },
-            {
-              name: 'size',
-              type: 'text',
-              label: 'Diện tích (m²) *',
-              placeholder: 'Nhập diện tích',
-              disabled: isPending,
-            },
-            {
-              name: 'occupancy',
-              type: 'text',
-              label: 'Số người tối đa *',
-              placeholder: 'Nhập số người tối đa',
-              disabled: isPending,
-            },
-            {
-              name: 'maxQuantity',
-              type: 'text',
-              label: 'Số lượng phòng *',
-              placeholder: 'Nhập số lượng phòng',
-              disabled: isPending,
-            },
-            {
-              name: 'services',
-              type: 'select',
-              label: 'Dịch vụ *',
-              placeholder: 'Chọn dịch vụ',
-              options: AVAILABLE_SERVICES.map((s) => ({ label: s, value: s })),
+              options: hotels.map((h) => ({ label: h.name, value: h.id })),
               multiple: true,
               disabled: isPending,
             },
             {
-              name: 'images',
+              name: 'maxQualityPerUser',
               type: 'text',
-              label: 'Ảnh (URL, phân cách bởi dấu phẩy)',
-              placeholder: 'https://example.com/room1.jpg, https://example.com/room2.jpg',
+              label: 'Số lượt tối đa/người *',
+              placeholder: 'Ví dụ: 1, 2...',
+              disabled: isPending,
+            },
+            {
+              name: 'usageCount',
+              type: 'text',
+              label: 'Tổng số lượt sử dụng *',
+              placeholder: 'Ví dụ: 100',
+              disabled: isPending,
+            },
+            {
+              name: 'state',
+              type: 'select',
+              label: 'Trạng thái *',
+              placeholder: 'Chọn trạng thái',
+              options: [
+                { label: 'Đang hoạt động', value: 'ACTIVE' },
+                { label: 'Không hoạt động', value: 'INACTIVE' },
+              ],
               disabled: isPending,
             },
           ]}
@@ -132,7 +108,7 @@ export function AddEditRoomDialog({
                     Đang xử lý...
                   </>
                 ) : formMode === 'add' ? (
-                  'Thêm phòng'
+                  'Thêm mã'
                 ) : (
                   'Lưu thay đổi'
                 )}
