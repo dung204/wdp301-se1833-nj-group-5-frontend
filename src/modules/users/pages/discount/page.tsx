@@ -149,7 +149,7 @@ export function Discount() {
               </span>
             </h1>
             <p className="animate-pulse text-xl text-white">
-              <strong>Khuyến mãi độc quyền chỉ có ở Royal Hotel -</strong>
+              <strong>Khuyến mãi độc quyền chỉ có ở travelbooking.com - </strong>
               Hãy tận dụng ngay hôm nay để nhận ưu đãi tốt nhất!
             </p>
           </div>

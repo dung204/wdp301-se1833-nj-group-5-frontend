@@ -14,6 +14,12 @@ class UserService extends HttpClient {
     });
   }
 
+  public updateUserProfile(payload: UpdateUserSchema) {
+    return this.patch<SuccessResponse<User>>(`/users/profile`, payload, {
+      isPrivateRoute: true,
+    });
+  }
+
   public getAllUsers(params?: CommonSearchParams) {
     return this.get<SuccessResponse<User[]>>('/users', {
       params,

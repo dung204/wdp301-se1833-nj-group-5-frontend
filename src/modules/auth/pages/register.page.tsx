@@ -12,20 +12,20 @@ import {
   CardTitle,
 } from '@/base/components/ui/card';
 
-import { LoginForm } from '../components/login-form';
+import { RegisterForm } from '../components/register-form';
 
-export function LoginPage() {
+export function RegisterPage() {
   return (
     <div className="flex grow items-center justify-center">
       <Card className="m-auto w-sm">
         <CardHeader>
-          <CardTitle className="text-center text-xl">Đăng nhập</CardTitle>
+          <CardTitle className="text-center text-xl">Đăng ký</CardTitle>
           <CardDescription className="text-center">
-            Đăng nhập để trải nghiệm dịch vụ của chúng tôi
+            Đăng ký để trải nghiệm dịch vụ của chúng tôi
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-6">
-          <LoginForm />
+          <RegisterForm />
           <div className="flex items-center gap-2">
             <div className="border-border w-full border"></div>
             <p className="font-medium">Hoặc</p>
@@ -36,9 +36,9 @@ export function LoginPage() {
             Tiếp tục với Google
           </Button>
           <div className="text-center">
-            Bạn chưa có tài khoản?{' '}
-            <Link href="/auth/register" className="text-blue-500 hover:underline">
-              Đăng ký ngay
+            Bạn đã có tài khoản?{' '}
+            <Link href="/auth/login" className="text-blue-500 hover:underline">
+              Đăng nhập ngay
             </Link>
           </div>
         </CardContent>

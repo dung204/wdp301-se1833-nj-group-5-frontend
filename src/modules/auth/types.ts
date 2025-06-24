@@ -3,8 +3,8 @@ import { z } from 'zod';
 import { SuccessResponse } from '@/base/types';
 
 export const loginSchema = z.object({
-  email: z.string().nonempty().email(),
-  password: z.string().min(8),
+  email: z.string().nonempty('Email không được để trống').email('Email không hợp lệ'),
+  password: z.string().min(8, 'Mật khẩu phải có tối thiểu 8 ký tự'),
 });
 
 export type LoginSchema = z.infer<typeof loginSchema>;
@@ -14,17 +14,21 @@ export type LoginSuccessResponse = SuccessResponse<{
   refreshToken: string;
   user: {
     id: string;
-    fullName: string;
-    avatar: string | null;
-    description: string | null;
+    fullName?: string;
   };
 }>;
 
 export type RefreshTokenSuccessResponse = LoginSuccessResponse;
 
 export const registerSchema = z.object({
-  email: z.string().nonempty().email(),
-  password: z.string().min(8),
+  email: z.string().nonempty('Email không được để trống').email('Email không hợp lệ'),
+  password: z.string().min(8, 'Mật khẩu phải có tối thiểu 8 ký tự'),
 });
 
 export type RegisterSchema = z.infer<typeof registerSchema>;
+
+export enum Role {
+  CUSTOMER = 'CUSTOMER',
+  HOTEL_OWNER = 'HOTEL_OWNER',
+  ADMIN = 'ADMIN',
+}

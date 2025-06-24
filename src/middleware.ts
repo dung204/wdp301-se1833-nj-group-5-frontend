@@ -1,11 +1,11 @@
 import { decodeJwt } from 'jose';
 import { NextURL } from 'next/dist/server/web/next-url';
 import { NextRequest, NextResponse } from 'next/server';
-import { pathToRegexp } from 'path-to-regexp';
 
 import { LoginSuccessResponse, RefreshTokenSuccessResponse } from '@/modules/auth/types';
 
 import { envServer } from './base/config/env-server.config';
+import { userSchema } from './modules/users/types';
 
 export const config = {
   /**
@@ -19,19 +19,26 @@ export const config = {
   matcher: '/((?!api|_next/static|_next/image|.*\\..*).*)',
 };
 
-const privateRoutes = ['/private', '/user/*path'];
-
 export async function middleware(request: NextRequest) {
   const accessToken = request.cookies.get('accessToken')?.value;
   const refreshToken = request.cookies.get('refreshToken')?.value;
 
   const { pathname } = request.nextUrl;
   const redirectUrl = request.nextUrl.clone();
-  const isPrivateRoute = privateRoutes.some((route) => pathToRegexp(route).regexp.test(pathname));
+  const isPrivateRoute = pathname.startsWith('/user');
 
   try {
+    if (!accessToken && !isPrivateRoute) {
+      return NextResponse.next();
+    }
+
     const { exp } = decodeJwt(accessToken ?? '');
-    if (exp! * 1000 < Date.now()) throw new Error();
+    const user = userSchema
+      .pick({ id: true, role: true, fullName: true, gender: true })
+      .safeParse(JSON.parse(request.cookies.get('user')?.value ?? '{}')).data;
+
+    // If access token is expired or the user (retrieved from cookies) is not available -> refresh the access token
+    if (exp! * 1000 < Date.now() || !user) throw new Error();
 
     // Continue if the route is public
     return NextResponse.next();
@@ -67,6 +74,10 @@ async function handleRefreshToken(refreshToken: string) {
   // Should not use authService, since that service is for client side
   const res = await fetch(`${envServer.API_URL}auth/refresh`, {
     method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify({ refreshToken }),
   });
 
