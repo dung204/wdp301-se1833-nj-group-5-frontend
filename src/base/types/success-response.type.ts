@@ -6,6 +6,7 @@ export type SuccessResponse<T> = T extends unknown[]
       data: T;
       metadata: {
         pagination: Pagination;
+        filters: Record<string, unknown>;
         sorting: Sorting[];
       };
     }

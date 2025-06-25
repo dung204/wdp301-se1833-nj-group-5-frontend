@@ -13,7 +13,7 @@ import { hotelService } from '@/modules/manager/services/hotel.service';
 
 import { HotelSkeleton } from './HotelSkeleton';
 
-export function ListHotel() {
+export function HotelsPage() {
   const [priceRange, setPriceRange] = React.useState([0, 5000000]);
   const [sortBy, setSortBy] = React.useState('price-low');
   const [searchQuery, setSearchQuery] = React.useState('');
@@ -30,46 +30,7 @@ export function ListHotel() {
 
   return (
     <div>
-      <div className="border-l-4 border-red-500 bg-red-50 p-4">
-        <div className="container mx-auto flex items-center justify-between">
-          <div className="flex items-center">
-            <div className="mr-3 flex h-8 w-8 items-center justify-center rounded-full bg-red-500 text-white">
-              !
-            </div>
-            <div>
-              <p className="font-medium text-red-700">
-                Nhanh lên! 91% chỗ nghỉ trên trang của chúng tôi đã kín phòng
-              </p>
-              <p className="text-sm text-red-600">
-                Phòng ở Hà Nội đang bán rất chạy vào ngày bạn chọn. Nhanh tay đặt trước khi giá
-                tăng.
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center text-sm">
-            <span className="mr-2">Thời gian đến ngày nhận phòng</span>
-            <div className="flex">
-              <div className="min-w-[40px] rounded bg-red-500 px-2 py-1 text-center text-white">
-                <div className="font-bold">00</div>
-                <div className="text-xs">ngày</div>
-              </div>
-              <div className="min-w-[40px] rounded bg-red-500 px-2 py-1 text-center text-white">
-                <div className="font-bold">14</div>
-                <div className="text-xs">giờ</div>
-              </div>
-              <div className="min-w-[40px] rounded bg-red-500 px-2 py-1 text-center text-white">
-                <div className="font-bold">39</div>
-                <div className="text-xs">phút</div>
-              </div>
-              <div className="min-w-[40px] rounded bg-red-500 px-2 py-1 text-center text-white">
-                <div className="font-bold">26</div>
-                <div className="text-xs">giây</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div className="flex-1 bg-gray-50">
+      <div className="flex-1">
         <div className="container mx-auto px-4 py-6">
           <div className="flex gap-6">
             {/* FilterFilter */}
@@ -104,7 +65,14 @@ export function ListHotel() {
                         <span>TỐI ĐA</span>
                       </div>
                       <div className="flex gap-2">
-                        <Input value={priceRange[0]} className="text-center" readOnly />
+                        <Input
+                          value={priceRange[0].toLocaleString('vi-VN', {
+                            style: 'currency',
+                            currency: 'VND',
+                          })}
+                          className="text-center"
+                          readOnly
+                        />
                         <span className="self-center">-</span>
                         <Input
                           value={priceRange[1].toLocaleString('vi-VN', {

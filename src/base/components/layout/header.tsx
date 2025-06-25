@@ -26,7 +26,7 @@ export async function Header() {
           <Link href="/">
             <Image src="/travel-booking-logo.png" alt="Logo" height={20} width={166} />
           </Link>
-          <Link href="#">
+          <Link href="/hotels">
             <Button variant="link" className="relative">
               Khách sạn
             </Button>
