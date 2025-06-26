@@ -120,7 +120,9 @@ function TimePickerInput12h(
     Required<Pick<TimeInputProps, 'date' | 'onDateChange'>> & { onSetToNow?: () => void },
 ) {
   const t = useTranslations('base.components.TimePicker');
-  const [period, setPeriod] = useState<Period>(format(props.date, 'aa') as Period);
+  const [period, setPeriod] = useState<Period>(
+    !props.date ? 'AM' : (format(props.date, 'aa') as Period),
+  );
 
   const minuteRef = useRef<HTMLInputElement>(null);
   const hourRef = useRef<HTMLInputElement>(null);

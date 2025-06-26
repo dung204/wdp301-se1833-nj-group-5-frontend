@@ -1,24 +1,21 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
-import {
-  CreateHotelSchema,
-  UpdateHotelSchema,
-  hotelService,
-} from '@/modules/manager/services/hotel.service';
+import { hotelsService } from '../services/hotels.service';
+import { CreateHotelSchema, Hotel, UpdateHotelSchema } from '../types';
 
 export function useHotelMutations(options?: {
-  onAddOrUpdateSuccess?: () => void;
+  onAddOrUpdateSuccess?: (hotel: Hotel) => void;
   onDeleteSuccess?: () => void;
 }) {
   const queryClient = useQueryClient();
 
   const createHotel = useMutation({
-    mutationFn: (payload: CreateHotelSchema) => hotelService.createNewHotel(payload),
-    onSuccess: () => {
+    mutationFn: (payload: CreateHotelSchema) => hotelsService.createNewHotel(payload),
+    onSuccess: ({ data: hotel }) => {
       toast.success('Thêm khách sạn thành công');
       queryClient.invalidateQueries({ queryKey: ['hotels'] });
-      options?.onAddOrUpdateSuccess?.();
+      options?.onAddOrUpdateSuccess?.(hotel);
     },
     onError: (error) => {
       toast.error('Có lỗi xảy ra khi thêm khách sạn');
@@ -28,11 +25,11 @@ export function useHotelMutations(options?: {
 
   const updateHotelMutation = useMutation({
     mutationFn: (data: { id: string } & UpdateHotelSchema) =>
-      hotelService.updateHotel(data.id, data),
-    onSuccess: () => {
+      hotelsService.updateHotel(data.id, data),
+    onSuccess: ({ data: hotel }) => {
       toast.success('Cập nhật khách sạn thành công');
       queryClient.invalidateQueries({ queryKey: ['hotels'] });
-      options?.onAddOrUpdateSuccess?.();
+      options?.onAddOrUpdateSuccess?.(hotel);
     },
     onError: (error) => {
       toast.error('Có lỗi xảy ra khi cập nhật khách sạn');
@@ -41,7 +38,7 @@ export function useHotelMutations(options?: {
   });
 
   const deleteHotelMutation = useMutation({
-    mutationFn: (id: string) => hotelService.deleteHotel(id),
+    mutationFn: (id: string) => hotelsService.deleteHotel(id),
     onSuccess: () => {
       toast.success('Xóa khách sạn thành công');
       queryClient.invalidateQueries({ queryKey: ['hotels'] });

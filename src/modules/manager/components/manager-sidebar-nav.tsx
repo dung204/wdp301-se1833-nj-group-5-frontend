@@ -1,6 +1,15 @@
 'use client';
 
-import { ChevronRight, type LucideIcon } from 'lucide-react';
+import {
+  BedDouble,
+  CalendarCheck2,
+  ChevronRight,
+  Hotel,
+  LayoutDashboard,
+  type LucideIcon,
+  Percent,
+  Users,
+} from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -18,31 +27,78 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from '@/base/components/ui/sidebar';
+import { Role } from '@/modules/auth';
 
-export function NavMain({
-  items,
-  userRole,
-}: {
-  items: {
+type NavItem = {
+  name: string;
+  title: string;
+  url: string;
+  icon?: LucideIcon;
+  isActive?: boolean;
+  items?: {
     title: string;
     url: string;
-    icon?: LucideIcon;
-    isActive?: boolean;
-    items?: {
-      title: string;
-      url: string;
-    }[];
-    role: string[];
   }[];
-  userRole: string;
-}) {
+  role: Role[];
+};
+
+const navItems: NavItem[] = [
+  {
+    name: 'Dashboard',
+    url: '/manager/dashboard',
+    icon: LayoutDashboard,
+    title: 'Bảng điều khiển',
+    role: [Role.ADMIN, Role.HOTEL_OWNER],
+  },
+  {
+    name: 'Users',
+    url: '/manager/users',
+    icon: Users,
+    title: 'Quản lý Khách hàng',
+    role: [Role.ADMIN, Role.HOTEL_OWNER],
+  },
+  {
+    name: 'Bookings',
+    url: '/manager/bookings',
+    icon: CalendarCheck2,
+    title: 'Quản lý Đặt phòng',
+    role: [Role.ADMIN, Role.HOTEL_OWNER],
+  },
+  {
+    name: 'Hotels',
+    url: '/manager/hotels',
+    icon: Hotel,
+    title: 'Quản lý Khách sạn',
+    role: [Role.ADMIN, Role.HOTEL_OWNER],
+  },
+  {
+    name: 'Rooms',
+    url: '/manager/rooms',
+    icon: BedDouble,
+    title: 'Quản lý Phòng',
+    role: [Role.ADMIN, Role.HOTEL_OWNER],
+  },
+  {
+    name: 'Discounts',
+    url: '/manager/discounts',
+    icon: Percent,
+    title: 'Quản lý Khuyến mãi',
+    role: [Role.ADMIN, Role.HOTEL_OWNER],
+  },
+];
+
+type NavMainProps = {
+  userRole?: Role;
+};
+
+export function ManagerSidebarNav({ userRole }: NavMainProps) {
   const pathname = usePathname();
 
   return (
     <SidebarGroup>
       <SidebarMenu>
-        {items
-          ?.filter((item) => userRole && item.role.includes(userRole))
+        {navItems
+          .filter((item) => userRole && item.role.includes(userRole))
           .map((item) => {
             const isActive = Boolean(pathname && item.url && pathname.includes(item.url));
             if (item.items && item.items.length > 0) {

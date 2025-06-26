@@ -1,0 +1,566 @@
+'use client';
+
+import { useSuspenseQuery } from '@tanstack/react-query';
+import {
+  Building2,
+  Clock,
+  Edit,
+  Eye,
+  MapPin,
+  MoreHorizontal,
+  Plus,
+  PlusIcon,
+  Star,
+  Trash2,
+  User,
+} from 'lucide-react';
+import Image from 'next/image';
+import { ComponentProps, useState } from 'react';
+import { toast } from 'sonner';
+
+import { Pagination } from '@/base/components/layout/pagination';
+import { Badge } from '@/base/components/ui/badge';
+import { Button } from '@/base/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/base/components/ui/card';
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/base/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/base/components/ui/dropdown-menu';
+import { Label } from '@/base/components/ui/label';
+import { Separator } from '@/base/components/ui/separator';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/base/components/ui/table';
+import { DateTimeUtils } from '@/base/utils';
+
+import { HotelForm } from '../components/hotel-form';
+import { useHotelMutations } from '../hooks/use-hotel-mutations';
+import { hotelsService } from '../services/hotels.service';
+import { CreateHotelSchema, Hotel, HotelSearchParams, UpdateHotelSchema } from '../types';
+
+type ManagerHotelsPageProps = {
+  searchParams: HotelSearchParams;
+};
+
+export function ManagerHotelsPage({ searchParams }: ManagerHotelsPageProps) {
+  const [selectedHotel, setSelectedHotel] = useState<Hotel | null>(null);
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+
+  // Update query to use searchParams
+  const {
+    data: {
+      data: hotels,
+      metadata: { pagination },
+    },
+  } = useSuspenseQuery({
+    queryKey: ['hotels', 'all', searchParams],
+    queryFn: () => hotelsService.getAllHotels(searchParams),
+  });
+
+  // Add mutation
+
+  return (
+    <div className="mx-auto max-w-7xl space-y-6 p-6">
+      {/* Header */}
+      <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+        <div>
+          <h1 className="flex items-center gap-2 text-3xl font-bold text-gray-900">
+            <Building2 className="h-8 w-8 text-blue-600" />
+            Quản lý khách sạn
+          </h1>
+          <p className="mt-1 text-gray-600">Quản lý thông tin khách sạn và dịch vụ</p>
+        </div>
+        <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => setAddDialogOpen(true)}>
+          <Plus className="size-4" />
+          Thêm khách sạn
+        </Button>
+      </div>
+      {/* <Card>
+        <CardContent className="space-y-4 p-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div>
+              <Label>Tìm theo tên</Label>
+              <Input
+                placeholder="Nhập tên khách sạn..."
+              onChange={(e) => handleSearch(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <Label>Địa chỉ</Label>
+              <Input
+                placeholder="Nhập địa chỉ..."
+              onChange={(e) => handleAddressFilter(e.target.value)}
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card> */}
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Tổng khách sạn</p>
+                <p className="text-2xl font-bold text-gray-900">{pagination.total}</p>
+              </div>
+              <Building2 className="h-8 w-8 text-blue-600" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Đang hoạt động</p>
+                <p className="text-2xl font-bold text-green-600">{pagination.total}</p>
+              </div>
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-100">
+                <div className="h-3 w-3 rounded-full bg-green-600"></div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Danh sách khách sạn</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-gray-50">
+                  {/* <TableHead className="font-semibold">#</TableHead> */}
+                  <TableHead className="font-semibold">Tên khách sạn</TableHead>
+                  <TableHead className="font-semibold">Địa chỉ</TableHead>
+                  <TableHead className="font-semibold">Chủ sở hữu</TableHead>
+                  <TableHead className="font-semibold">Check-in</TableHead>
+                  <TableHead className="font-semibold">Check-out</TableHead>
+                  <TableHead className="text-center font-semibold">Hành động</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {hotels.map((hotel) => (
+                  <TableRow key={hotel.id} className="hover:bg-gray-50">
+                    {/* <TableCell className="font-medium">{(page - 1) * PAGE_SIZE + index + 1}</TableCell> */}
+                    <TableCell>
+                      <div className="font-medium text-gray-900">{hotel.name}</div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center text-gray-600">
+                        <MapPin className="mr-1 h-4 w-4" />
+                        <span className="max-w-[200px] truncate">{hotel.address}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center text-gray-600">
+                        <User className="mr-1 h-4 w-4" />
+                        {hotel.owner.fullName}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center text-gray-600">
+                        <Clock className="mr-1 h-4 w-4" />
+                        <span className="text-sm">
+                          {DateTimeUtils.formatTime(new Date(hotel.checkinTime.from))} -{' '}
+                          {DateTimeUtils.formatTime(new Date(hotel.checkinTime.to))}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center text-gray-600">
+                        <Clock className="mr-1 h-4 w-4" />
+                        <span className="text-sm">
+                          {DateTimeUtils.formatTime(hotel.checkoutTime)}
+                        </span>
+                      </div>
+                    </TableCell>
+
+                    <TableCell>
+                      <DropdownMenu modal={false}>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setSelectedHotel(hotel);
+                              setDetailsDialogOpen(true);
+                            }}
+                          >
+                            <Eye className="mr-2 h-4 w-4" />
+                            Chi tiết
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setSelectedHotel(hotel);
+                              setEditDialogOpen(true);
+                            }}
+                          >
+                            <Edit className="mr-2 h-4 w-4" />
+                            Chỉnh sửa
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setSelectedHotel(hotel);
+                              setDeleteDialogOpen(true);
+                            }}
+                            className="text-red-600 focus:text-red-600"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Xóa
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+          <Pagination pagination={pagination} />
+        </CardContent>
+      </Card>
+
+      <AddHotelDialog open={addDialogOpen} onOpenChange={setAddDialogOpen} />
+      <EditHotelDialog
+        hotel={selectedHotel}
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+      />
+      <HotelDetailsDialog
+        hotel={selectedHotel}
+        open={detailsDialogOpen}
+        onOpenChange={setDetailsDialogOpen}
+      />
+      <ConfirmDeleteHotelDialog
+        hotelToDelete={selectedHotel}
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+      />
+    </div>
+  );
+}
+
+interface AddHotelDialogProps extends ComponentProps<typeof Dialog> {
+  onSuccess?: (hotel: Hotel) => void;
+}
+
+function AddHotelDialog({ onSuccess, ...props }: AddHotelDialogProps) {
+  const {
+    createHotel: { mutate: triggerCreateHotel, isPending },
+  } = useHotelMutations({
+    onAddOrUpdateSuccess: (hotel) => {
+      props.onOpenChange?.(false);
+      onSuccess?.(hotel);
+    },
+  });
+
+  return (
+    <Dialog {...props}>
+      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <PlusIcon />
+            Thêm khách sạn mới
+          </DialogTitle>
+        </DialogHeader>
+
+        <HotelForm
+          onSuccessSubmit={(payload) => triggerCreateHotel(payload as CreateHotelSchema)}
+          loading={isPending}
+          renderSubmitButton={(SubmitButton) => (
+            <DialogFooter className="gap-2">
+              <DialogClose asChild>
+                <Button type="button" variant="outline">
+                  Hủy
+                </Button>
+              </DialogClose>
+              <SubmitButton>Thêm khách sạn</SubmitButton>
+            </DialogFooter>
+          )}
+        />
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+interface EditHotelDialogProps extends ComponentProps<typeof Dialog> {
+  hotel: Hotel | null;
+  onSuccess?: (hotel: Hotel) => void;
+}
+
+function EditHotelDialog({ hotel, onSuccess, ...props }: EditHotelDialogProps) {
+  const {
+    updateHotel: { mutate: triggerUpdateHotel, isPending },
+  } = useHotelMutations({
+    onAddOrUpdateSuccess: (hotel) => {
+      props.onOpenChange?.(false);
+      onSuccess?.(hotel);
+    },
+  });
+
+  return (
+    <Dialog {...props}>
+      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Edit />
+            Chỉnh sửa khách sạn
+          </DialogTitle>
+        </DialogHeader>
+
+        <HotelForm
+          defaultValues={{
+            ...hotel,
+            checkinTime: {
+              from: new Date(hotel?.checkinTime.from || ''),
+              to: new Date(hotel?.checkinTime.to || ''),
+            },
+            checkoutTime: new Date(hotel?.checkoutTime || ''),
+          }}
+          onSuccessSubmit={(payload) =>
+            triggerUpdateHotel({ id: hotel?.id || '', ...(payload as UpdateHotelSchema) })
+          }
+          loading={isPending}
+          renderSubmitButton={(SubmitButton) => (
+            <DialogFooter className="gap-2">
+              <DialogClose asChild>
+                <Button type="button" variant="outline">
+                  Hủy
+                </Button>
+              </DialogClose>
+              <SubmitButton>Lưu thông tin</SubmitButton>
+            </DialogFooter>
+          )}
+        />
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+interface HotelDetailsDialogProps extends ComponentProps<typeof Dialog> {
+  hotel: Hotel | null;
+}
+
+function HotelDetailsDialog({ hotel, ...props }: HotelDetailsDialogProps) {
+  return (
+    <Dialog {...props}>
+      <DialogContent
+        aria-describedby={undefined}
+        className="max-h-[95vh] w-screen max-w-[90vw] overflow-y-auto p-0"
+      >
+        <DialogHeader className="rounded-t-lg bg-gradient-to-r from-emerald-600 to-teal-600 p-6 text-white">
+          <DialogTitle className="flex items-center gap-3 text-xl font-bold">
+            <div className="rounded-full bg-white/20 p-2">
+              <Eye className="h-5 w-5" />
+            </div>
+            Thông tin chi tiết khách sạn
+          </DialogTitle>
+          {/* <DialogDescription>Thông tin chi tiết về khách sạn.</DialogDescription> */}
+        </DialogHeader>
+
+        {/* Scrollable content */}
+        <div className="flex-1 overflow-y-auto p-6">
+          {hotel && (
+            <div className="space-y-6">
+              <div className="space-y-6">
+                {/* Ảnh khách sạn (chiếm toàn bộ chiều ngang) */}
+                <div className="relative h-64 w-full overflow-hidden rounded-xl shadow-lg">
+                  {Array.isArray(hotel.avatar) && hotel.avatar[0] ? (
+                    <Image src={hotel.avatar[0]} alt={hotel.name} fill className="object-cover" />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center bg-gray-100 text-gray-400">
+                      Không có ảnh
+                    </div>
+                  )}
+                </div>
+
+                {/* Thông tin khách sạn */}
+                <div className="space-y-4 px-2">
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <h2 className="text-2xl font-bold text-gray-900">{hotel.name}</h2>
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-1">
+                        <span className="text-lg font-semibold">{hotel.rating}</span>
+                        <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                      </div>
+                      <Badge variant="secondary" className="bg-green-100 text-green-800">
+                        Đang hoạt động
+                      </Badge>
+                    </div>
+                  </div>
+
+                  {/* Địa chỉ */}
+                  <div className="flex items-start gap-2 text-gray-700">
+                    <MapPin className="mt-0.5 h-5 w-5 text-emerald-600" />
+                    <p>{hotel.address}</p>
+                  </div>
+                  <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-900">
+                    <User className="h-5 w-5 text-gray-600" />
+                    Chủ sở hữu:
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-gray-900">{hotel.owner.fullName}</p>
+                    </div>
+                  </h3>
+                  <div className="space-y-3"></div>
+                </div>
+              </div>
+
+              <Separator />
+              <Card>
+                <CardContent className="p-4">
+                  <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-900">
+                    <Clock className="h-5 w-5 text-gray-600" />
+                    Giờ hoạt động
+                  </h3>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between rounded-lg bg-blue-50 p-3">
+                      <div>
+                        <Label className="text-sm font-medium text-gray-600">Check-in</Label>
+                        <p className="font-semibold text-blue-700">
+                          {DateTimeUtils.formatTime(new Date(hotel.checkinTime.from))} -{' '}
+                          {DateTimeUtils.formatTime(new Date(hotel.checkinTime.to))}
+                        </p>
+                      </div>
+                      <Clock className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div className="flex items-center justify-between rounded-lg bg-orange-50 p-3">
+                      <div>
+                        <Label className="text-sm font-medium text-gray-600">Check-out</Label>
+                        <p className="font-semibold text-orange-700">
+                          {DateTimeUtils.formatTime(hotel.checkoutTime)}
+                        </p>
+                      </div>
+                      <Clock className="h-5 w-5 text-orange-600" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Amenities */}
+              <Card>
+                <CardContent className="p-4">
+                  <h3 className="mb-4 text-lg font-semibold text-gray-900">Tiện nghi khách sạn</h3>
+                  <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+                    {hotel.services.map((amenity, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center gap-3 rounded-lg bg-gray-50 p-3 transition-colors hover:bg-gray-100"
+                      >
+                        <div className="h-2 w-2 rounded-full bg-emerald-500"></div>
+                        <span className="text-gray-700">{amenity}</span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Description */}
+              <Card>
+                <CardContent className="p-4">
+                  <h3 className="mb-4 text-lg font-semibold text-gray-900">Mô tả khách sạn</h3>
+                  <div className="prose prose-gray max-w-none">
+                    <p className="leading-relaxed text-gray-700">
+                      {hotel.description || 'Không có mô tả'}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <DialogFooter className="border-t bg-gray-50 p-6">
+          <div className="flex w-full items-center justify-between">
+            <div className="flex items-center gap-4 text-sm text-gray-600">
+              <span>Cập nhật lần cuối: Hôm nay</span>
+              <Badge variant="outline" className="border-green-600 text-green-600">
+                Đã xác thực
+              </Badge>
+            </div>
+            <div className="flex gap-3">
+              <DialogClose asChild>
+                <Button variant="outline">Đóng</Button>
+              </DialogClose>
+            </div>
+          </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+interface ConfirmDeleteHotelDialogProps extends ComponentProps<typeof Dialog> {
+  hotelToDelete: Hotel | null;
+}
+
+function ConfirmDeleteHotelDialog({ hotelToDelete, ...props }: ConfirmDeleteHotelDialogProps) {
+  const {
+    deleteHotel: { mutate: triggerDeleteHotel, isPending },
+  } = useHotelMutations({
+    onDeleteSuccess: () => {
+      props.onOpenChange?.(false);
+      toast.success('Xóa khách sạn thành công');
+    },
+  });
+
+  return (
+    <Dialog {...props}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-red-600">
+            <Trash2 className="h-5 w-5" />
+            Xác nhận xóa khách sạn
+          </DialogTitle>
+        </DialogHeader>
+        <div className="py-4">
+          <p className="text-gray-600">
+            Bạn có chắc chắn muốn xóa khách sạn{' '}
+            <span className="font-semibold text-gray-900">{hotelToDelete?.name}</span> không?
+          </p>
+        </div>
+        <DialogFooter className="gap-2">
+          <DialogClose asChild>
+            <Button variant="outline" disabled={isPending}>
+              Hủy
+            </Button>
+          </DialogClose>
+          <Button
+            variant="danger"
+            onClick={() => triggerDeleteHotel(hotelToDelete?.id as string)}
+            loading={isPending}
+          >
+            Xóa khách sạn
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}

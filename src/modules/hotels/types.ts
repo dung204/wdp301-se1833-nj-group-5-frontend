@@ -47,18 +47,26 @@ export interface Hotel extends BaseEntity {
 }
 
 export const createHotelSchema = z.object({
-  name: z.string().nonempty('Tên khách sạn là bắt buộc'),
-  address: z.string().nonempty('Địa chỉ là bắt buộc'),
-  description: z.string().nonempty('Mô tả là bắt buộc'),
-  phoneNumber: z.string().nonempty('Số điện thoại là bắt buộc'),
-  checkinTime: z.object({
-    from: z.string().datetime(),
-    to: z.string().datetime(),
-  }),
-  checkoutTime: z.string().datetime(),
-  avatar: z.array(z.string()).optional(),
-  services: z.array(z.string()).optional(),
-  rating: z.number().min(0).max(5),
+  name: z.string().nonempty('Tên khách sạn không được để trống'),
+  address: z.string().nonempty('Địa chỉ không được để trống'),
+  description: z.string().nonempty('Mô tả không được để trống'),
+  phoneNumber: z.string().nonempty('Số điện thoại không được để trống'),
+  priceHotel: z.coerce.number().positive('Giá tiền phải là số dương'),
+  checkinTime: z
+    .object(
+      {
+        from: z.date({ message: 'Vui lòng chọn đầy đủ thời gian ban đầu và kết thúc' }),
+        to: z.date({ message: 'Vui lòng chọn đầy đủ thời gian ban đầu và kết thúc' }),
+      },
+      { message: 'Vui lòng chọn đầy đủ thời gian ban đầu và kết thúc' },
+    )
+    .refine(({ from, to }) => from.getTime() < to.getTime(), {
+      message: 'Thời gian bắt đầu phải nhỏ hơn thời gian kết thúc',
+      path: ['checkinTime'],
+    }),
+  checkoutTime: z.date({ message: 'Thời gian check-out không được để trống' }),
+  rating: z.number({ message: 'Đánh giá không được để trống' }).int().min(1).max(5),
+  cancelPolicy: z.nativeEnum(CancelPolicy, { message: 'Chính sách hủy phòng không được để trống' }),
 });
 
 export type CreateHotelSchema = z.infer<typeof createHotelSchema>;

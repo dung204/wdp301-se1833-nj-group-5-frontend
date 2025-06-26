@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as LabelPrimitive from '@radix-ui/react-label';
 import { Slot } from '@radix-ui/react-slot';
-import { InfoIcon } from 'lucide-react';
+import { InfoIcon, Star } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import * as React from 'react';
 import {
@@ -376,6 +376,10 @@ type FormFieldSpec<TFieldValues extends FieldValues = FieldValues> = {
       type: 'video';
       render?: FormFieldRenderFn<{ className?: string }>;
     }
+  | {
+      type: 'rating';
+      render?: FormFieldRenderFn<{ className?: string }>;
+    }
 );
 
 interface FormProps<TFieldValues extends FieldValues, TTransformedValues> {
@@ -540,6 +544,9 @@ function getFormControl(formField: FormFieldSpec) {
 
     case 'video':
       return VideoFormControl;
+
+    case 'rating':
+      return RatingFormControl;
   }
 }
 
@@ -721,19 +728,19 @@ function TimeRangeFormControl({
 }) {
   const form = useFormContext();
   const { error, i18nNamespace } = useFormField();
+  const {
+    field: { value: dateRange, onChange },
+  } = useController({
+    control: form.control,
+    name: formField.name,
+  });
   const t = useTranslations(i18nNamespace);
 
   return (
     <FormControl>
       <TimeRangePicker
-        dateRange={form.getValues(formField.name)}
-        onDateRangeChange={(dateRange) =>
-          form.setValue(formField.name, dateRange, {
-            shouldDirty: true,
-            shouldTouch: true,
-            shouldValidate: true,
-          })
-        }
+        dateRange={dateRange}
+        onDateRangeChange={onChange}
         disabled={formField.disabled}
         placeholder={
           formField.placeholder ??
@@ -758,19 +765,19 @@ function TimeFormControl({
 }) {
   const form = useFormContext();
   const { error, i18nNamespace } = useFormField();
+  const {
+    field: { value: date, onChange },
+  } = useController({
+    control: form.control,
+    name: formField.name,
+  });
   const t = useTranslations(i18nNamespace);
 
   return (
     <FormControl>
       <TimePicker
-        date={form.getValues(formField.name)}
-        onDateChange={(date) =>
-          form.setValue(formField.name, date, {
-            shouldDirty: true,
-            shouldTouch: true,
-            shouldValidate: true,
-          })
-        }
+        date={date}
+        onDateChange={onChange}
         disabled={formField.disabled}
         placeholder={
           formField.placeholder ??
@@ -1074,6 +1081,67 @@ function VideoFormControl({
   });
 
   return <VideoUploader className={className} videos={videos} onVideosChange={onChange} />;
+}
+
+function RatingFormControl({
+  formField,
+}: {
+  className?: string;
+  formField: Extract<FormFieldSpec, { type: 'rating' }>;
+}) {
+  const form = useFormContext();
+  const {
+    field: { value, onChange },
+  } = useController({
+    control: form.control,
+    name: formField.name,
+  });
+  const [hoverValue, setHoverValue] = React.useState<number>(0);
+
+  return (
+    <div className="flex">
+      <Star
+        onClick={() => onChange(1)}
+        className={cn('stroke-muted fill-muted hover:fill-yellow-400', {
+          'fill-yellow-400 stroke-yellow-400 text-yellow-400': value >= 1 || hoverValue >= 1,
+        })}
+        onMouseOver={() => setHoverValue(1)}
+        onMouseOut={() => setHoverValue(0)}
+      />
+      <Star
+        onClick={() => onChange(2)}
+        className={cn('stroke-muted fill-muted hover:fill-yellow-400', {
+          'fill-yellow-400 stroke-yellow-400 text-yellow-400': value >= 2 || hoverValue >= 2,
+        })}
+        onMouseOver={() => setHoverValue(2)}
+        onMouseOut={() => setHoverValue(0)}
+      />
+      <Star
+        onClick={() => onChange(3)}
+        className={cn('stroke-muted fill-muted hover:fill-yellow-400', {
+          'fill-yellow-400 stroke-yellow-400 text-yellow-400': value >= 3 || hoverValue >= 3,
+        })}
+        onMouseOver={() => setHoverValue(3)}
+        onMouseOut={() => setHoverValue(0)}
+      />
+      <Star
+        onClick={() => onChange(4)}
+        className={cn('stroke-muted fill-muted hover:fill-yellow-400', {
+          'fill-yellow-400 stroke-yellow-400 text-yellow-400': value >= 4 || hoverValue >= 4,
+        })}
+        onMouseOver={() => setHoverValue(4)}
+        onMouseOut={() => setHoverValue(0)}
+      />
+      <Star
+        onClick={() => onChange(5)}
+        className={cn('stroke-muted fill-muted hover:fill-yellow-400', {
+          'fill-yellow-400 stroke-yellow-400 text-yellow-400': value >= 5 || hoverValue >= 5,
+        })}
+        onMouseOver={() => setHoverValue(5)}
+        onMouseOut={() => setHoverValue(0)}
+      />
+    </div>
+  );
 }
 
 function getDefaultValues<TFieldValues extends FieldValues, TTransformedValues>(
