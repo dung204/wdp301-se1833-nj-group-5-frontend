@@ -1,5 +1,6 @@
 import { format } from 'date-fns';
 import { Edit, Loader2, Plus } from 'lucide-react';
+import Image from 'next/image';
 import { toast } from 'sonner';
 
 import { Button } from '@/base/components/ui/button';
@@ -73,7 +74,15 @@ export function AddEditDialog({
               placeholder="Nhập địa chỉ khách sạn"
             />
           </div>
-
+          <div className="space-y-2">
+            <Label htmlFor="address">Price Hotel</Label>
+            <Input
+              id="priceHotel"
+              value={hotelFormData.priceHotel}
+              onChange={(e) => setHotelFormData({ ...hotelFormData, priceHotel: e.target.value })}
+              placeholder="Nhập giá của khách sạn"
+            />
+          </div>
           <div className="space-y-2">
             <Label htmlFor="description">Mô tả</Label>
             <Textarea
@@ -83,6 +92,24 @@ export function AddEditDialog({
               placeholder="Mô tả về khách sạn..."
               rows={3}
             />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="cancelPolicy">Chính sách hủy</Label>
+            <select
+              id="cancelPolicy"
+              value={hotelFormData.cancelPolicy}
+              onChange={(e) =>
+                setHotelFormData({
+                  ...hotelFormData,
+                  cancelPolicy: e.target.value as Hotel['cancelPolicy'],
+                })
+              }
+              className="w-full rounded-md border border-gray-300 p-2 text-sm"
+            >
+              <option value="NO_REFUND">Không hoàn tiền</option>
+              <option value="REFUND_BEFORE_1_DAY">Hoàn trước 1 ngày</option>
+              <option value="REFUND_BEFORE_3_DAYS">Hoàn trước 3 ngày</option>
+            </select>
           </div>
           <div className="space-y-2">
             <Label htmlFor="avatar">Ảnh đại diện (Avatar)</Label>
@@ -107,7 +134,7 @@ export function AddEditDialog({
             {hotelFormData.avatar.length > 0 && (
               <div className="flex flex-wrap gap-2 pt-2">
                 {hotelFormData.avatar.map((url, index) => (
-                  <img
+                  <Image
                     key={index}
                     src={url}
                     alt={`avatar-${index}`}

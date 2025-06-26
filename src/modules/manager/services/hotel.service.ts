@@ -1,12 +1,7 @@
 import { z } from 'zod';
 
 import { HttpClient } from '@/base/lib';
-import {
-  BaseEntity,
-  CommonSearchParams,
-  SuccessResponse,
-  commonSearchParamsSchema,
-} from '@/base/types';
+import { BaseEntity, CommonSearchParams, SuccessResponse } from '@/base/types';
 
 export interface TimeRange {
   from: Date;
@@ -24,20 +19,14 @@ export interface Hotel extends BaseEntity {
   description: string;
   owner: HotelOwner;
   phoneNumber: string;
+  priceHotel: string;
+  cancelPolicy: 'NO_REFUND' | 'REFUND_BEFORE_1_DAY' | 'REFUND_BEFORE_3_DAYS';
   checkinTime: TimeRange;
   checkoutTime: Date;
   avatar: string[];
   rating: number;
   services: string[];
 }
-// Schema tìm kiếm khách sạn
-export const hotelSearchParamsSchema = commonSearchParamsSchema.extend({
-  id: z.string().optional(),
-  name: z.string().optional(),
-  address: z.string().optional(),
-  minRating: z.number().min(0).max(5).optional(),
-  services: z.array(z.string()).optional(),
-});
 
 class HotelService extends HttpClient {
   constructor() {
@@ -78,6 +67,10 @@ export const createHotelSchema = z.object({
   address: z.string().nonempty('Địa chỉ là bắt buộc'),
   description: z.string().nonempty('Mô tả là bắt buộc'),
   phoneNumber: z.string().nonempty('Số điện thoại là bắt buộc'),
+  priceHotel: z.preprocess((val) => Number(val), z.number().min(100000, 'Rate from 100.000đ')),
+  cancelPolicy: z.enum(['NO_REFUND', 'REFUND_BEFORE_1_DAY', 'REFUND_BEFORE_3_DAYS'], {
+    errorMap: () => ({ message: 'Chính sách hủy không hợp lệ' }),
+  }),
   checkinTime: z.object({
     from: z.string().datetime(),
     to: z.string().datetime(),
@@ -94,5 +87,3 @@ export const updateHotelSchema = createHotelSchema.partial();
 
 export type UpdateHotelSchema = z.infer<typeof updateHotelSchema>;
 export const hotelService = new HotelService();
-
-export type HotelSearchParams = z.infer<typeof hotelSearchParamsSchema>;

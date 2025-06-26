@@ -87,12 +87,15 @@ export function HotelManagement() {
     description: '',
     owner: { id: '', fullName: '' },
     phoneNumber: '',
+    priceHotel: '',
+    cancelPolicy: 'NO_REFUND',
     checkinTime: { from: new Date(), to: new Date() },
     avatar: [],
     checkoutTime: new Date(),
     rating: 5,
     services: [],
     createTimestamp: '',
+    updateTimestamp: '',
     deleteTimestamp: null,
   });
 
@@ -105,12 +108,15 @@ export function HotelManagement() {
       description: '',
       owner: { id: '', fullName: '' },
       phoneNumber: '',
+      priceHotel: '',
+      cancelPolicy: 'NO_REFUND',
       checkinTime: { from: new Date(), to: new Date() },
       avatar: [],
       checkoutTime: new Date(),
       rating: 5,
       services: [],
       createTimestamp: '',
+      updateTimestamp: '',
       deleteTimestamp: null,
     });
     setEditOrAddDialogOpen(true);
@@ -155,6 +161,8 @@ export function HotelManagement() {
       address: hotelFormData.address,
       description: hotelFormData.description,
       phoneNumber: hotelFormData.phoneNumber,
+      priceHotel: Number(hotelFormData.priceHotel),
+      cancelPolicy: hotelFormData.cancelPolicy,
       checkinTime: {
         from: hotelFormData.checkinTime.from.toISOString(),
         to: hotelFormData.checkinTime.to.toISOString(),

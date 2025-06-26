@@ -41,6 +41,9 @@ class DiscountService extends HttpClient {
   public deleteDiscount(id: string) {
     return this.delete(`/discounts/${id}`, { isPrivateRoute: true });
   }
+  public restoreDiscount(id: string) {
+    return this.delete(`/discounts/restore${id}`, { isPrivateRoute: true });
+  }
 }
 
 export const createDiscountSchema = z.object({

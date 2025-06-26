@@ -349,7 +349,7 @@ export function RoomManagement() {
       />
 
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
-        <DialogContent className="max-h-[95vh] max-w-4xl overflow-hidden p-0">
+        <DialogContent className="max-h-[95vh] max-w-4xl overflow-y-auto p-0">
           <div className="flex h-full flex-col">
             {/* Header with gradient background */}
             <DialogHeader className="rounded-t-lg bg-gradient-to-r from-blue-600 to-purple-600 p-6 text-white">
@@ -361,7 +361,6 @@ export function RoomManagement() {
               </DialogTitle>
             </DialogHeader>
 
-            {/* Scrollable content */}
             <div className="flex-1 overflow-y-auto p-6">
               {selectedRoom && (
                 <div className="space-y-6">

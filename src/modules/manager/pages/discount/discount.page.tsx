@@ -1,9 +1,11 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { Edit, Eye, MoreHorizontal, Plus, Trash2 } from 'lucide-react';
+import { Edit, Eye, MoreHorizontal, Plus, RotateCcw, Trash2 } from 'lucide-react';
+import Image from 'next/image';
 import { useState } from 'react';
 
+import { Badge } from '@/base/components/ui/badge';
 import { Button } from '@/base/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/base/components/ui/card';
 import {
@@ -35,7 +37,7 @@ import {
 import { hotelService } from '@/modules/manager/services/hotel.service';
 
 import { AddEditDiscountDialog } from './components/add-edit-room-dialog';
-import { useRoomMutations } from './hooks/use-room-mutations';
+import { useDiscountMutations } from './hooks/use-discount-mutations';
 
 // Đổi tên file này nếu cần
 
@@ -43,11 +45,14 @@ export function DiscountManagement() {
   const [page, setPage] = useState(1);
   const [formMode, setFormMode] = useState<'add' | 'edit'>('add');
   const [selectHotelId, setSelectedHotelId] = useState<string>('');
+  const [selectDiscount, setSelectDiscount] = useState<Discount | null>(null);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [discountToDelete, setDiscountToDelete] = useState<Discount | null>(null);
   const [addEditDialogOpen, setAddEditDialogOpen] = useState(false);
-
-  const { createDiscount, updateDiscount, deleteDiscount } = useRoomMutations({
+  const [editingDiscount, setEditingDiscount] = useState<Discount | null>(null);
+  const { createDiscount, updateDiscount, toggleDiscountDeletion } = useDiscountMutations({
     onAddOrUpdateSuccess: () => setAddEditDialogOpen(false),
     onDeleteSuccess: () => {
       setDeleteDialogOpen(false);
@@ -83,20 +88,30 @@ export function DiscountManagement() {
   const handleFilterHotel = (hotelId: string) => {
     setSelectedHotelId(hotelId);
   };
-
-  const handleConfirmDelete = () => {
-    if (discountToDelete?.id) {
-      deleteDiscount.mutate(discountToDelete.id);
-    }
-  };
-
   const handleDeleteDiscountClick = (discount: Discount) => {
     setDiscountToDelete(discount);
     setDeleteDialogOpen(true);
   };
+  const handleRestoreDiscountClick = (discount: Discount) => {
+    toggleDiscountDeletion.mutate({
+      id: discount.id,
+      deleteTimestamp: discount.deleteTimestamp ? new Date(discount.deleteTimestamp) : undefined,
+    });
+  };
+  const handleConfirmDelete = () => {
+    if (discountToDelete?.id) {
+      toggleDiscountDeletion.mutate({
+        id: discountToDelete.id,
+        deleteTimestamp: discountToDelete.deleteTimestamp
+          ? new Date(discountToDelete.deleteTimestamp)
+          : undefined,
+      });
+    }
+  };
 
   const handleEditDiscountClick = (discount: Discount) => {
     setFormMode('edit');
+    setEditingDiscount(discount);
     setDiscountFormData({
       amount: Number(discount.amount),
       expiredTimestamp: new Date(discount.expiredTimestamp),
@@ -124,8 +139,8 @@ export function DiscountManagement() {
   const handleDiscountSubmit = (data: CreateDiscountSchema) => {
     if (formMode === 'add') {
       createDiscount.mutate(data);
-    } else if (discountToDelete?.id) {
-      updateDiscount.mutate({ id: discountToDelete.id, ...data });
+    } else if (editingDiscount?.id) {
+      updateDiscount.mutate({ id: editingDiscount.id, ...data });
     }
   };
 
@@ -206,7 +221,12 @@ export function DiscountManagement() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setSelectDiscount(discount);
+                            setViewDialogOpen(true);
+                          }}
+                        >
                           <Eye className="mr-2 h-4 w-4" />
                           Chi tiết
                         </DropdownMenuItem>
@@ -214,13 +234,23 @@ export function DiscountManagement() {
                           <Edit className="mr-2 h-4 w-4" />
                           Chỉnh sửa
                         </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => handleDeleteDiscountClick(discount)}
-                          className="text-red-600"
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Xóa
-                        </DropdownMenuItem>
+                        {discount.deleteTimestamp ? (
+                          <DropdownMenuItem
+                            onClick={() => handleRestoreDiscountClick(discount)}
+                            className="text-green-600"
+                          >
+                            <RotateCcw className="mr-2 h-4 w-4" />
+                            Khôi phục
+                          </DropdownMenuItem>
+                        ) : (
+                          <DropdownMenuItem
+                            onClick={() => handleDeleteDiscountClick(discount)}
+                            className="text-red-600"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Xóa
+                          </DropdownMenuItem>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -285,32 +315,159 @@ export function DiscountManagement() {
         hotels={hotelData?.data || []}
       />
 
+      <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
+        <DialogContent className="max-h-[95vh] max-w-3xl overflow-y-auto p-0">
+          <div className="flex h-full flex-col">
+            {/* Header */}
+            <DialogHeader className="rounded-t-lg bg-gradient-to-r from-blue-600 to-purple-600 p-6 text-white">
+              <DialogTitle className="flex items-center gap-3 text-xl font-bold">
+                <div className="rounded-full bg-white/20 p-2">
+                  <Eye className="h-5 w-5" />
+                </div>
+                Thông tin chi tiết mã giảm giá
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="flex-1 overflow-y-auto p-6">
+              {selectDiscount && (
+                <div className="space-y-6">
+                  {/* Mức giảm giá & trạng thái */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-2xl font-bold text-gray-900">
+                        Giảm {selectDiscount.amount}%
+                      </h2>
+                      <p className="mt-1 text-sm text-gray-500">
+                        Hạn sử dụng:{' '}
+                        <span className="font-medium text-red-600">
+                          {new Date(selectDiscount.expiredTimestamp).toLocaleDateString('vi-VN')}
+                        </span>
+                      </p>
+                    </div>
+                    <Badge
+                      className={
+                        selectDiscount.state === 'ACTIVE'
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-gray-200 text-gray-600'
+                      }
+                    >
+                      {selectDiscount.state === 'ACTIVE' ? 'Đang hoạt động' : 'Ngưng hoạt động'}
+                    </Badge>
+                  </div>
+
+                  {/* Số lượng sử dụng và giới hạn */}
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <Card className="p-4 text-center">
+                      <div className="text-sm text-gray-500">Số lần đã dùng</div>
+                      <div className="text-2xl font-bold text-blue-600">
+                        {selectDiscount.usageCount}
+                      </div>
+                    </Card>
+                    <Card className="p-4 text-center">
+                      <div className="text-sm text-gray-500">Giới hạn người dùng</div>
+                      <div className="text-2xl font-bold text-blue-600">
+                        {selectDiscount.maxQualityPerUser}
+                      </div>
+                    </Card>
+                  </div>
+
+                  {/* Danh sách khách sạn áp dụng */}
+                  <div>
+                    <h3 className="mb-3 text-lg font-semibold text-gray-900">
+                      Áp dụng cho khách sạn
+                    </h3>
+                    <ul className="space-y-2">
+                      {selectDiscount.applicableHotels.length > 0 ? (
+                        selectDiscount.applicableHotels.map((hotel) => (
+                          <li
+                            key={hotel.id}
+                            className="flex items-start gap-3 rounded-lg bg-gray-50 p-3"
+                          >
+                            <Image
+                              src={hotel.avatar[0]}
+                              alt={hotel.name}
+                              className="h-12 w-12 rounded object-cover"
+                            />
+                            <div>
+                              <p className="font-semibold text-gray-900">{hotel.name}</p>
+                              <p className="text-sm text-gray-500">{hotel.address}</p>
+                            </div>
+                          </li>
+                        ))
+                      ) : (
+                        <p className="text-gray-500 italic">Không áp dụng cho khách sạn nào</p>
+                      )}
+                    </ul>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <DialogFooter className="border-t bg-gray-50 p-6">
+              <div className="flex w-full justify-end">
+                <Button variant="outline" onClick={() => setViewDialogOpen(false)}>
+                  Đóng
+                </Button>
+              </div>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Dialog xác nhận xóa */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-red-600">
-              <Trash2 className="h-5 w-5" />
-              Xác nhận xóa mã giảm giá
+            <DialogTitle
+              className={`flex items-center gap-2 ${discountToDelete?.deleteTimestamp ? 'text-green-600' : 'text-red-600'}`}
+            >
+              {discountToDelete?.deleteTimestamp ? (
+                <>
+                  <RotateCcw className="h-5 w-5" />
+                  Xác nhận khôi phục mã giảm giá
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-5 w-5" />
+                  Xác nhận xóa mã giảm giá
+                </>
+              )}
             </DialogTitle>
           </DialogHeader>
           <div className="py-4 text-gray-600">
-            Bạn có chắc muốn xóa mã <strong>{discountToDelete?.amount}%</strong>?
+            {discountToDelete?.deleteTimestamp ? (
+              <>
+                Bạn có chắc muốn <strong>khôi phục</strong> mã{' '}
+                <strong>{discountToDelete?.amount}%</strong>?
+              </>
+            ) : (
+              <>
+                Bạn có chắc muốn <strong>xóa</strong> mã{' '}
+                <strong>{discountToDelete?.amount}%</strong>?
+              </>
+            )}
           </div>
           <DialogFooter className="gap-2">
             <Button
               variant="outline"
               onClick={() => setDeleteDialogOpen(false)}
-              disabled={deleteDiscount.isPending}
+              disabled={toggleDiscountDeletion.isPending}
             >
               Hủy
             </Button>
             <Button
-              variant="danger"
+              variant={discountToDelete?.deleteTimestamp ? 'success' : 'danger'}
               onClick={handleConfirmDelete}
-              disabled={deleteDiscount.isPending}
+              disabled={toggleDiscountDeletion.isPending}
             >
-              {deleteDiscount.isPending ? 'Đang xóa...' : 'Xóa'}
+              {toggleDiscountDeletion.isPending
+                ? discountToDelete?.deleteTimestamp
+                  ? 'Đang khôi phục...'
+                  : 'Đang xóa...'
+                : discountToDelete?.deleteTimestamp
+                  ? 'Khôi phục'
+                  : 'Xóa'}
             </Button>
           </DialogFooter>
         </DialogContent>
