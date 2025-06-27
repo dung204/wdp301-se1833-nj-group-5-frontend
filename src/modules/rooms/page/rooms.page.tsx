@@ -39,6 +39,23 @@ type RoomsPageProps = {
   hotelId: string;
 };
 
+const iconMap: { [key: string]: React.ElementType } = {
+  wifi: Wifi,
+  parking: Car,
+  breakfast: Coffee,
+  gym: Dumbbell,
+  pool: Waves,
+  restaurant: Utensils,
+  tv: Tv,
+  ac: Wind,
+  phone: Phone,
+};
+
+function getAmenityIcon(amenity: string) {
+  const IconComponent = iconMap[amenity.toLowerCase()] || Coffee;
+  return <IconComponent className="h-4 w-4" />;
+}
+
 export function RoomsPage({ searchParams, hotelId }: RoomsPageProps) {
   const router = useRouter();
   const [_, setPage] = useState(1);
@@ -60,23 +77,6 @@ export function RoomsPage({ searchParams, hotelId }: RoomsPageProps) {
   });
 
   const hotel = hotels?.[0]; // Assuming single hotel data
-
-  const getAmenityIcon = (amenity: string) => {
-    const iconMap: { [key: string]: React.ElementType } = {
-      wifi: Wifi,
-      parking: Car,
-      breakfast: Coffee,
-      gym: Dumbbell,
-      pool: Waves,
-      restaurant: Utensils,
-      tv: Tv,
-      ac: Wind,
-      phone: Phone,
-    };
-
-    const IconComponent = iconMap[amenity.toLowerCase()] || Coffee;
-    return <IconComponent className="h-4 w-4" />;
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">

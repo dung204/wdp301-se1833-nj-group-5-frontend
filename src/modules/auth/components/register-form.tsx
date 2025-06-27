@@ -115,7 +115,7 @@ function RegisterStep1({ onStepComplete, error, loading }: RegisterStep1Props) {
             password: true,
           })
           .extend({
-            confirmPassword: z.string().nonempty('Mật khẩu xác nhận không được để trống'),
+            confirmPassword: z.string().trim().nonempty('Mật khẩu xác nhận không được để trống'),
           })
           .refine(({ password, confirmPassword }) => password === confirmPassword, {
             message: 'Mật khẩu xác nhận không khớp với mật khẩu mới',

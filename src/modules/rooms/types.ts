@@ -4,8 +4,8 @@ import { BaseEntity, commonSearchParamsSchema } from '@/base/types';
 import { Hotel } from '@/modules/hotels';
 
 export const roomSearchParamsSchema = commonSearchParamsSchema.extend({
-  name: z.string().optional(),
-  hotel: z.string().optional(),
+  name: z.string().trim().optional(),
+  hotel: z.string().trim().optional(),
   rate: z.coerce.number().int().min(0).max(5).optional().catch(undefined),
   size: z.coerce.number().int().min(0).max(5).optional().catch(undefined),
 });
@@ -28,12 +28,12 @@ export interface Room extends BaseEntity {
   isSoldOut: boolean;
 }
 export const createRoomSchema = z.object({
-  name: z.string().min(1, 'Room name is required'),
-  hotel: z.string().uuid('Hotel ID must be a valid UUID'),
+  name: z.string().trim().min(1, 'Room name is required'),
+  hotel: z.string().trim().uuid('Hotel ID must be a valid UUID'),
   rate: z.preprocess((val) => Number(val), z.number().min(100000, 'Rate from 100.000đ')),
   size: z.preprocess((val) => Number(val), z.number().min(1, 'Size must be greater than 0')),
   occupancy: z.preprocess((val) => Number(val), z.number().min(1, 'Occupancy must be at least 1')),
-  services: z.array(z.string()).default([]),
+  services: z.array(z.string().trim()).default([]),
   images: z.preprocess(
     (val) =>
       typeof val === 'string'
@@ -42,7 +42,7 @@ export const createRoomSchema = z.object({
             .map((s) => s.trim())
             .filter(Boolean)
         : [],
-    z.array(z.string().url()),
+    z.array(z.string().trim().url()),
   ),
   maxQuantity: z.preprocess(
     (val) => Number(val),

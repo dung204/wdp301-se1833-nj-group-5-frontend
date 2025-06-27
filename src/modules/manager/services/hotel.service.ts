@@ -63,21 +63,21 @@ class HotelService extends HttpClient {
   }
 }
 export const createHotelSchema = z.object({
-  name: z.string().nonempty('Tên khách sạn là bắt buộc'),
-  address: z.string().nonempty('Địa chỉ là bắt buộc'),
-  description: z.string().nonempty('Mô tả là bắt buộc'),
-  phoneNumber: z.string().nonempty('Số điện thoại là bắt buộc'),
+  name: z.string().trim().nonempty('Tên khách sạn là bắt buộc'),
+  address: z.string().trim().nonempty('Địa chỉ là bắt buộc'),
+  description: z.string().trim().nonempty('Mô tả là bắt buộc'),
+  phoneNumber: z.string().trim().nonempty('Số điện thoại là bắt buộc'),
   priceHotel: z.preprocess((val) => Number(val), z.number().min(100000, 'Rate from 100.000đ')),
   cancelPolicy: z.enum(['NO_REFUND', 'REFUND_BEFORE_1_DAY', 'REFUND_BEFORE_3_DAYS'], {
     errorMap: () => ({ message: 'Chính sách hủy không hợp lệ' }),
   }),
   checkinTime: z.object({
-    from: z.string().datetime(),
-    to: z.string().datetime(),
+    from: z.string().trim().datetime(),
+    to: z.string().trim().datetime(),
   }),
-  checkoutTime: z.string().datetime(),
-  avatar: z.array(z.string()).optional(),
-  services: z.array(z.string()).optional(),
+  checkoutTime: z.string().trim().datetime(),
+  avatar: z.array(z.string().trim()).optional(),
+  services: z.array(z.string().trim()).optional(),
   rating: z.number().min(0).max(5),
 });
 

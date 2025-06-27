@@ -60,7 +60,7 @@ export const createDiscountSchema = z.object({
     z.number().min(0, 'Usage count must be a non-negative number'),
   ),
   applicableHotels: z
-    .array(z.string().uuid('Each hotel ID must be a valid UUID'))
+    .array(z.string().trim().uuid('Each hotel ID must be a valid UUID'))
     .min(1, 'Phải chọn ít nhất 1 khách sạn'), // Thêm .min(1, ...)
   expiredTimestamp: z.coerce.date().refine(
     (date) => {

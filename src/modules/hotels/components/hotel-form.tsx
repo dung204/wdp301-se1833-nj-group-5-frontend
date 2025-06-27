@@ -63,7 +63,7 @@ export function HotelForm(props: HotelFormProps) {
         {
           name: 'rating',
           type: 'rating',
-          label: 'Đánh giá',
+          label: 'Xếp hạng',
           render: ({ Control, Description, Label, Message }) => (
             <>
               <div className="flex items-center gap-2">

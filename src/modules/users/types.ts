@@ -16,8 +16,8 @@ export const gender = {
 } as const;
 
 export const userSchema = baseEntitySchema.extend({
-  email: z.string(),
-  fullName: z.string().optional(),
+  email: z.string().trim(),
+  fullName: z.string().trim().optional(),
   role: z.nativeEnum(Role),
   gender: z.nativeEnum(Gender).optional(),
 });
@@ -25,7 +25,7 @@ export const userSchema = baseEntitySchema.extend({
 export type User = z.infer<typeof userSchema>;
 
 export const createUserSchema = z.object({
-  fullName: z.string().nonempty('Tên đầy đủ không được để trống'),
+  fullName: z.string().trim().nonempty('Tên đầy đủ không được để trống'),
   gender: z.nativeEnum(Gender),
 });
 

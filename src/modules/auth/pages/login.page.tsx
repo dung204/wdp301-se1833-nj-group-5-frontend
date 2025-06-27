@@ -1,9 +1,7 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
 
-import { Button } from '@/base/components/ui/button';
 import {
   Card,
   CardContent,
@@ -26,15 +24,6 @@ export function LoginPage() {
         </CardHeader>
         <CardContent className="flex flex-col gap-6">
           <LoginForm />
-          <div className="flex items-center gap-2">
-            <div className="border-border w-full border"></div>
-            <p className="font-medium">Hoặc</p>
-            <div className="border-border w-full border"></div>
-          </div>
-          <Button variant="outline" className="w-full">
-            <Image src="/google-logo.svg" alt="Google logo" width={18} height={18} />
-            Tiếp tục với Google
-          </Button>
           <div className="text-center">
             Bạn chưa có tài khoản?{' '}
             <Link href="/auth/register" className="text-blue-500 hover:underline">

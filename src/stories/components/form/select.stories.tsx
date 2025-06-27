@@ -117,7 +117,7 @@ export const WithForm: Story = {
         className="flex flex-col gap-6"
         schema={z.object({
           gender: z.enum(['male', 'female'], { message: 'Please choose a gender' }),
-          skills: z.array(z.string()).nonempty('Please select at least one skill'),
+          skills: z.array(z.string().trim()).nonempty('Please select at least one skill'),
         })}
         fields={[
           {
@@ -175,7 +175,7 @@ export const WithForm: Story = {
     className="flex flex-col gap-6"
     schema={z.object({
       gender: z.enum(['male', 'female'], { message: 'Please choose a gender' }),
-      skills: z.array(z.string()).nonempty('Please select at least one skill'),
+      skills: z.array(z.string().trim()).nonempty('Please select at least one skill'),
     })}
     fields={[
       {

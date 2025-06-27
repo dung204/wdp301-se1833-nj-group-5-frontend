@@ -1,6 +1,6 @@
 import { HeartIcon, MapPinIcon, StarIcon } from 'lucide-react';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 import { Button } from '@/base/components/ui/button';
 import { Card, CardContent } from '@/base/components/ui/card';
@@ -13,7 +13,6 @@ type HotelCardProps = {
 };
 
 export function HotelCard({ hotel }: HotelCardProps) {
-  const router = useRouter();
   return (
     <Card className="overflow-hidden transition-shadow duration-300 hover:shadow-lg">
       <CardContent className="p-0">
@@ -142,13 +141,11 @@ export function HotelCard({ hotel }: HotelCardProps) {
                   <span className="hidden sm:inline">Thêm vào yêu thích</span>
                   <span className="inline sm:hidden">Yêu thích</span>
                 </Button>
-                <Button
-                  size="sm"
-                  className="bg-blue-600 hover:bg-blue-700"
-                  onClick={() => router.push(`/hotels/${hotel.id}`)}
-                >
-                  Xem chi tiết
-                </Button>
+                <Link href={`/hotel/${hotel.id}`}>
+                  <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
+                    Xem chi tiết
+                  </Button>
+                </Link>
               </div>
             </div>
           </div>

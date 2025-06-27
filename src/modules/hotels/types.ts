@@ -17,14 +17,14 @@ export const cancelPolicies = {
 } as const;
 
 export const hotelSearchParamsSchema = commonSearchParamsSchema.extend({
-  id: z.string().optional(),
-  name: z.string().optional(),
-  address: z.string().optional(),
+  id: z.string().trim().optional(),
+  name: z.string().trim().optional(),
+  address: z.string().trim().optional(),
   minRating: z.coerce.number().int().min(0).max(5).optional().catch(undefined),
   maxRating: z.coerce.number().int().min(0).max(5).optional().catch(undefined),
   minPrice: z.coerce.number().nonnegative().optional().catch(undefined),
   maxPrice: z.coerce.number().nonnegative().optional().catch(undefined),
-  services: z.array(z.string()).optional(),
+  services: z.array(z.string().trim()).optional(),
   cancelPolicy: z.nativeEnum(CancelPolicy).optional().catch(undefined),
 });
 
@@ -47,10 +47,10 @@ export interface Hotel extends BaseEntity {
 }
 
 export const createHotelSchema = z.object({
-  name: z.string().nonempty('Tên khách sạn không được để trống'),
-  address: z.string().nonempty('Địa chỉ không được để trống'),
-  description: z.string().nonempty('Mô tả không được để trống'),
-  phoneNumber: z.string().nonempty('Số điện thoại không được để trống'),
+  name: z.string().trim().nonempty('Tên khách sạn không được để trống'),
+  address: z.string().trim().nonempty('Địa chỉ không được để trống'),
+  description: z.string().trim().nonempty('Mô tả không được để trống'),
+  phoneNumber: z.string().trim().nonempty('Số điện thoại không được để trống'),
   priceHotel: z.coerce.number().positive('Giá tiền phải là số dương'),
   checkinTime: z
     .object(
@@ -65,7 +65,7 @@ export const createHotelSchema = z.object({
       path: ['checkinTime'],
     }),
   checkoutTime: z.date({ message: 'Thời gian check-out không được để trống' }),
-  rating: z.number({ message: 'Đánh giá không được để trống' }).int().min(1).max(5),
+  rating: z.number({ message: 'Xếp hạng không được để trống' }).int().min(1).max(5),
   cancelPolicy: z.nativeEnum(CancelPolicy, { message: 'Chính sách hủy phòng không được để trống' }),
 });
 
