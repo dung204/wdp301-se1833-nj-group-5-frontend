@@ -16,8 +16,9 @@ class HotelsService extends HttpClient {
   public getHotelById(id: string) {
     return this.get<SuccessResponse<Hotel>>(`/hotels/${id}`);
   }
-  public getHotelByAdmin() {
-    return this.get<SuccessResponse<Hotel>>(`/hotels/admin`, {
+  public getHotelByAdmin(params?: HotelSearchParams) {
+    return this.get<SuccessResponse<Hotel[]>>(`/hotels/admin`, {
+      params,
       isPrivateRoute: true,
     });
   }

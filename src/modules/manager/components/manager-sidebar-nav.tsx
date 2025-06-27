@@ -55,7 +55,7 @@ const navItems: NavItem[] = [
     url: '/manager/users',
     icon: Users,
     title: 'Quản lý Khách hàng',
-    role: [Role.ADMIN, Role.HOTEL_OWNER],
+    role: [Role.ADMIN],
   },
   {
     name: 'Bookings',

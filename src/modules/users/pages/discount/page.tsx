@@ -226,7 +226,7 @@ export function Discount() {
                           {promo.state === 'ACTIVE' ? 'Đang hoạt động' : 'Không hoạt động'}
                         </Badge>
                         <div className="flex items-center gap-1 text-sm text-gray-500">
-                          Hạn dùng:
+                          Hạn:
                           <Clock className="h-4 w-4" />
                           {new Date(promo.expiredTimestamp).toLocaleDateString()}
                         </div>
@@ -250,34 +250,41 @@ export function Discount() {
                             Khách sạn áp dụng:
                           </span>
                         </div>
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className="max-h-20 cursor-pointer overflow-y-auto">
-                                <div className="flex flex-wrap gap-1">
-                                  {promo.applicableHotels.slice(0, 3).map((hotel) => (
-                                    <Badge key={hotel.id} variant="outline" className="text-xs">
-                                      {hotel.name}
-                                    </Badge>
-                                  ))}
-                                  {promo.applicableHotels.length > 3 && (
-                                    <Badge variant="outline" className="text-xs">
-                                      +{promo.applicableHotels.length - 3} khác
-                                    </Badge>
-                                  )}
-                                </div>
-                              </div>
-                            </TooltipTrigger>
 
-                            <TooltipContent className="max-w-xs text-left">
-                              <ul className="text-xs leading-relaxed">
-                                {promo.applicableHotels.map((hotel) => (
-                                  <li key={hotel.id}>• {hotel.name}</li>
-                                ))}
-                              </ul>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+                        <div className="max-h-[60px] min-h-[70px] cursor-pointer overflow-y-auto">
+                          {promo.applicableHotels && promo.applicableHotels.length > 0 ? (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className="flex flex-wrap gap-1">
+                                    {promo.applicableHotels.slice(0, 2).map((hotel) => (
+                                      <Badge key={hotel.id} variant="outline" className="text-xs">
+                                        {hotel.name}
+                                      </Badge>
+                                    ))}
+                                    {promo.applicableHotels.length > 2 && (
+                                      <Badge variant="outline" className="text-xs">
+                                        +{promo.applicableHotels.length - 2} khác
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </TooltipTrigger>
+
+                                <TooltipContent className="max-w-xs text-left">
+                                  <ul className="text-xs leading-relaxed">
+                                    {promo.applicableHotels.map((hotel) => (
+                                      <li key={hotel.id}>• {hotel.name}</li>
+                                    ))}
+                                  </ul>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          ) : (
+                            <p className="text-muted-foreground text-sm italic">
+                              Chưa có khách sạn nào áp dụng mã giảm giá này
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </div>
 

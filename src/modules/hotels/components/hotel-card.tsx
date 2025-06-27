@@ -1,5 +1,6 @@
 import { HeartIcon, MapPinIcon, StarIcon } from 'lucide-react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 
 import { Button } from '@/base/components/ui/button';
 import { Card, CardContent } from '@/base/components/ui/card';
@@ -12,18 +13,26 @@ type HotelCardProps = {
 };
 
 export function HotelCard({ hotel }: HotelCardProps) {
+  const router = useRouter();
   return (
     <Card className="overflow-hidden transition-shadow duration-300 hover:shadow-lg">
       <CardContent className="p-0">
         <div className="flex flex-col sm:flex-row">
           {/* Left side - Image */}
           <div className="relative h-48 w-full flex-shrink-0 sm:w-64">
-            <Image
-              src={Array.isArray(hotel.avatar) ? hotel.avatar[0] : hotel.avatar}
-              alt={hotel.name}
-              fill
-              className="object-cover"
-            />
+            {hotel?.images && (Array.isArray(hotel.images) ? hotel.images[0] : hotel.images) ? (
+              <Image
+                src={Array.isArray(hotel.images) ? hotel.images[0] : hotel.images}
+                alt={hotel.name}
+                fill
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                className="object-cover"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center bg-gray-200 text-sm text-gray-500">
+                Không có ảnh
+              </div>
+            )}
             <Button
               variant="ghost"
               size="icon"
@@ -133,7 +142,11 @@ export function HotelCard({ hotel }: HotelCardProps) {
                   <span className="hidden sm:inline">Thêm vào yêu thích</span>
                   <span className="inline sm:hidden">Yêu thích</span>
                 </Button>
-                <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
+                <Button
+                  size="sm"
+                  className="bg-blue-600 hover:bg-blue-700"
+                  onClick={() => router.push(`/hotels/${hotel.id}`)}
+                >
                   Xem chi tiết
                 </Button>
               </div>

@@ -65,7 +65,7 @@ export function RoomManagement() {
   });
   const { data: hotelData } = useQuery({
     queryKey: ['hotels'],
-    queryFn: () => hotelService.getAllHotels(),
+    queryFn: () => hotelService.getHotelByAdmin(),
   });
 
   const [addEditDialogOpen, setAddEditDialogOpen] = useState(false);

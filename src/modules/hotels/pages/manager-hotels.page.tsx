@@ -72,10 +72,8 @@ export function ManagerHotelsPage({ searchParams }: ManagerHotelsPageProps) {
     },
   } = useSuspenseQuery({
     queryKey: ['hotels', 'all', searchParams],
-    queryFn: () => hotelsService.getAllHotels(searchParams),
+    queryFn: () => hotelsService.getHotelByAdmin(searchParams),
   });
-
-  // Add mutation
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-6">
@@ -392,8 +390,8 @@ function HotelDetailsDialog({ hotel, ...props }: HotelDetailsDialogProps) {
               <div className="space-y-6">
                 {/* Ảnh khách sạn (chiếm toàn bộ chiều ngang) */}
                 <div className="relative h-64 w-full overflow-hidden rounded-xl shadow-lg">
-                  {Array.isArray(hotel.avatar) && hotel.avatar[0] ? (
-                    <Image src={hotel.avatar[0]} alt={hotel.name} fill className="object-cover" />
+                  {Array.isArray(hotel.images) && hotel.images[0] ? (
+                    <Image src={hotel.images[0]} alt={hotel.name} fill className="object-cover" />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center bg-gray-100 text-gray-400">
                       Không có ảnh

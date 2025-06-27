@@ -41,7 +41,7 @@ export interface Hotel extends BaseEntity {
     to: string;
   };
   checkoutTime: Date;
-  avatar: string[];
+  images: string[];
   rating: number;
   services: string[];
 }

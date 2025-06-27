@@ -109,7 +109,7 @@ export function Favorites() {
             <p className="mb-6 text-gray-500">
               Hãy thêm những khách sạn bạn thích vào danh sách để dễ dàng tìm lại
             </p>
-            <Link href="/list-hotel">
+            <Link href="/hotels">
               <Button className="bg-blue-500 hover:bg-blue-600">Khám phá khách sạn</Button>
             </Link>
           </div>
@@ -203,7 +203,7 @@ export function Favorites() {
 
         {favoriteHotels.length > 0 && (
           <div className="mt-8 text-center">
-            <Link href="/list-hotel">
+            <Link href="/hotels">
               <Button variant="outline" className="mr-4">
                 Xem thêm khách sạn
               </Button>
