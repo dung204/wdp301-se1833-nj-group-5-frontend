@@ -29,7 +29,12 @@ export const createUserSchema = z.object({
   gender: z.nativeEnum(Gender),
 });
 
+export const updateRoleUserSchema = z.object({
+  role: z.enum(['CUSTOMER', 'HOTEL_OWNER']).optional(), // 👈 Thêm dòng này
+});
+
 export type CreateUserSchema = z.infer<typeof createUserSchema>;
+export type UpdateRoleUserSchema = z.infer<typeof updateRoleUserSchema>;
 
 export const updateUserSchema = createUserSchema.partial();
 

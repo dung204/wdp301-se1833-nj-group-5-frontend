@@ -36,6 +36,7 @@ export interface Hotel extends BaseEntity {
   description: string;
   owner: User;
   phoneNumber: string;
+  priceHotel: number;
   checkinTime: {
     from: string;
     to: string;
@@ -44,6 +45,7 @@ export interface Hotel extends BaseEntity {
   images: string[];
   rating: number;
   services: string[];
+  cancelPolicy: CancelPolicy;
 }
 
 export const createHotelSchema = z.object({

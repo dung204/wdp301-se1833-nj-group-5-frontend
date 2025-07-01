@@ -1,9 +1,23 @@
-import { RoomManagement } from '@/modules/manager/pages/rooms/room.page';
+import { getQueryClient } from '@/base/lib';
+import { roomSearchParamsSchema } from '@/modules/rooms';
+import { RoomManagement } from '@/modules/rooms/pages/manager-room.page';
+import { roomsService } from '@/modules/rooms/services/rooms.service';
 
-export default function ManageRoomsPage() {
+type PageProps = {
+  searchParams: Promise<unknown>;
+};
+export default async function ManageRoomsPage({ searchParams }: PageProps) {
+  const awaitedSearchParams = await searchParams;
+  const validatedSearchParams = roomSearchParamsSchema.parse(awaitedSearchParams);
+  const queryClient = getQueryClient();
+
+  await queryClient.prefetchQuery({
+    queryKey: ['rooms', 'all', validatedSearchParams],
+    queryFn: () => roomsService.getAllRooms(validatedSearchParams),
+  });
   return (
     <div>
-      <RoomManagement />
+      <RoomManagement searchParams={validatedSearchParams} />
     </div>
   );
 }

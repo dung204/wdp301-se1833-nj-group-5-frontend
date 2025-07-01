@@ -2,19 +2,26 @@
 
 import { useSuspenseQuery } from '@tanstack/react-query';
 import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
   Building2,
   Clock,
   Edit,
   Eye,
+  FilterIcon,
   MapPin,
   MoreHorizontal,
+  PhoneCall,
   Plus,
   PlusIcon,
+  SearchIcon,
   Star,
   Trash2,
   User,
 } from 'lucide-react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { ComponentProps, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -36,8 +43,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/base/components/ui/dropdown-menu';
+import { Input } from '@/base/components/ui/input';
 import { Label } from '@/base/components/ui/label';
+import { Select } from '@/base/components/ui/select';
 import { Separator } from '@/base/components/ui/separator';
+import { Slider } from '@/base/components/ui/slider';
 import {
   Table,
   TableBody,
@@ -51,18 +61,41 @@ import { DateTimeUtils } from '@/base/utils';
 import { HotelForm } from '../components/hotel-form';
 import { useHotelMutations } from '../hooks/use-hotel-mutations';
 import { hotelsService } from '../services/hotels.service';
-import { CreateHotelSchema, Hotel, HotelSearchParams, UpdateHotelSchema } from '../types';
+import {
+  CancelPolicy,
+  CreateHotelSchema,
+  Hotel,
+  HotelSearchParams,
+  UpdateHotelSchema,
+  cancelPolicies,
+} from '../types';
+import { HotelUtils } from '../utils/hotel.utils';
 
 type ManagerHotelsPageProps = {
   searchParams: HotelSearchParams;
 };
-
+const getCancelPolicyLabel = (policy: string) => {
+  switch (policy) {
+    case 'NO_REFUND':
+      return 'Không hoàn tiền';
+    case 'REFUND_BEFORE_1_DAY':
+      return 'Hoàn tiền nếu hủy trước 1 ngày';
+    case 'REFUND_BEFORE_3_DAYS':
+      return 'Hoàn tiền nếu hủy trước 3 ngày';
+    default:
+      return 'Chính sách không xác định';
+  }
+};
+type SortColumn = 'name' | 'address' | 'owner' | 'price';
 export function ManagerHotelsPage({ searchParams }: ManagerHotelsPageProps) {
+  const router = useRouter();
   const [selectedHotel, setSelectedHotel] = useState<Hotel | null>(null);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [sortColumn, setSortColumn] = useState<SortColumn | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc' | null>(null);
 
   // Update query to use searchParams
   const {
@@ -73,6 +106,69 @@ export function ManagerHotelsPage({ searchParams }: ManagerHotelsPageProps) {
   } = useSuspenseQuery({
     queryKey: ['hotels', 'all', searchParams],
     queryFn: () => hotelsService.getHotelByAdmin(searchParams),
+  });
+  const [name, setName] = useState(searchParams.name ?? '');
+  const [minPrice, setMinPrice] = useState(searchParams.minPrice ?? HotelUtils.DEFAULT_MIN_PRICE);
+  const [maxPrice, setMaxPrice] = useState(searchParams.maxPrice ?? HotelUtils.DEFAULT_MAX_PRICE);
+  const [cancelPolicy, setCancelPolicy] = useState<CancelPolicy | undefined>(
+    searchParams.cancelPolicy,
+  );
+  const handleApplyFilters = () => {
+    const url = new URL(window.location.href);
+
+    if (name !== '') {
+      url.searchParams.set('name', name);
+    } else {
+      url.searchParams.delete('name');
+    }
+
+    url.searchParams.set('minPrice', minPrice.toString());
+    url.searchParams.set('maxPrice', maxPrice.toString());
+
+    if (cancelPolicy) {
+      url.searchParams.set('cancelPolicy', cancelPolicy);
+    } else {
+      url.searchParams.delete('cancelPolicy');
+    }
+
+    router.push(url.href);
+  };
+  const handleSort = (column: SortColumn) => {
+    if (sortColumn === column) {
+      setSortDirection((prev) => (prev === 'asc' ? 'desc' : prev === 'desc' ? null : 'asc'));
+      if (sortDirection === 'desc') {
+        setSortColumn(null);
+      }
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
+  const getSortIcon = (column: SortColumn) => {
+    if (sortColumn !== column || !sortDirection) {
+      return <ArrowUpDown className="ml-1 h-4 w-4 opacity-50" />;
+    }
+    if (sortDirection === 'asc') {
+      return <ArrowUp className="ml-1 h-4 w-4 text-blue-500" />;
+    }
+    return <ArrowDown className="ml-1 h-4 w-4 text-blue-500" />;
+  };
+  const sortedHotels = [...hotels].sort((a, b) => {
+    if (!sortColumn || !sortDirection) return 0;
+    const dir = sortDirection === 'asc' ? 1 : -1;
+
+    switch (sortColumn) {
+      case 'name':
+        return a.name.localeCompare(b.name) * dir;
+      case 'address':
+        return a.address.localeCompare(b.address) * dir;
+      case 'owner':
+        return (a.owner?.fullName ?? '').localeCompare(b.owner?.fullName ?? '') * dir;
+      case 'price':
+        return (a.priceHotel - b.priceHotel) * dir;
+      default:
+        return 0;
+    }
   });
 
   return (
@@ -91,27 +187,6 @@ export function ManagerHotelsPage({ searchParams }: ManagerHotelsPageProps) {
           Thêm khách sạn
         </Button>
       </div>
-      {/* <Card>
-        <CardContent className="space-y-4 p-4">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <div>
-              <Label>Tìm theo tên</Label>
-              <Input
-                placeholder="Nhập tên khách sạn..."
-              onChange={(e) => handleSearch(e.target.value)}
-              />
-            </div>
-
-            <div>
-              <Label>Địa chỉ</Label>
-              <Input
-                placeholder="Nhập địa chỉ..."
-              onChange={(e) => handleAddressFilter(e.target.value)}
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card> */}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -141,6 +216,91 @@ export function ManagerHotelsPage({ searchParams }: ManagerHotelsPageProps) {
         </Card>
       </div>
 
+      <Card className="w-full">
+        <CardContent className="">
+          <CardTitle className="mb-6">Bộ lọc tìm kiếm</CardTitle>
+
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+            {/* Search Input */}
+            <div className="space-y-2">
+              <h3 className="font-medium">Tìm kiếm</h3>
+              <div className="relative">
+                <SearchIcon className="absolute top-3 left-3 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Tìm kiếm khách sạn"
+                  className="pl-10"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Price Range */}
+            <div className="space-y-3">
+              <h3 className="font-medium">Khoảng giá</h3>
+              <Slider
+                value={[minPrice, maxPrice]}
+                step={50000}
+                max={HotelUtils.DEFAULT_MAX_PRICE}
+                onValueChange={(value) => {
+                  setMinPrice(value[0]);
+                  setMaxPrice(value[1]);
+                }}
+                className="w-full"
+              />
+              <div className="flex justify-between text-sm text-gray-500">
+                <span>TỐI THIỂU</span>
+                <span>TỐI ĐA</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Input
+                  value={minPrice.toLocaleString('vi-VN', {
+                    style: 'currency',
+                    currency: 'VND',
+                  })}
+                  className="text-center text-sm"
+                  readOnly
+                />
+                <span className="text-gray-400">-</span>
+                <Input
+                  value={maxPrice.toLocaleString('vi-VN', {
+                    style: 'currency',
+                    currency: 'VND',
+                  })}
+                  className="text-center text-sm"
+                  readOnly
+                />
+              </div>
+            </div>
+
+            {/* Cancel Policy */}
+            <div className="flex flex-col gap-1.5 font-medium">
+              <h3>Chính sách hủy phòng</h3>
+              <Select
+                multiple={false}
+                options={Object.entries(cancelPolicies).map(([value, label]) => ({
+                  value,
+                  label,
+                }))}
+                placeholder="Chọn chính sách hủy phòng..."
+                searchable={false}
+                clearable
+                value={cancelPolicy}
+                onChange={(value) => setCancelPolicy(value as CancelPolicy)}
+              />
+            </div>
+          </div>
+
+          {/* Apply Button */}
+          <div className="mt-6 flex justify-center">
+            <Button onClick={handleApplyFilters} className="flex items-center gap-2">
+              <FilterIcon className="h-4 w-4" />
+              Áp dụng bộ lọc
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Table */}
       <Card>
         <CardHeader>
@@ -148,98 +308,141 @@ export function ManagerHotelsPage({ searchParams }: ManagerHotelsPageProps) {
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-gray-50">
-                  {/* <TableHead className="font-semibold">#</TableHead> */}
-                  <TableHead className="font-semibold">Tên khách sạn</TableHead>
-                  <TableHead className="font-semibold">Địa chỉ</TableHead>
-                  <TableHead className="font-semibold">Chủ sở hữu</TableHead>
-                  <TableHead className="font-semibold">Check-in</TableHead>
-                  <TableHead className="font-semibold">Check-out</TableHead>
-                  <TableHead className="text-center font-semibold">Hành động</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {hotels.map((hotel) => (
-                  <TableRow key={hotel.id} className="hover:bg-gray-50">
-                    {/* <TableCell className="font-medium">{(page - 1) * PAGE_SIZE + index + 1}</TableCell> */}
-                    <TableCell>
-                      <div className="font-medium text-gray-900">{hotel.name}</div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center text-gray-600">
-                        <MapPin className="mr-1 h-4 w-4" />
-                        <span className="max-w-[200px] truncate">{hotel.address}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center text-gray-600">
-                        <User className="mr-1 h-4 w-4" />
-                        {hotel.owner.fullName}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center text-gray-600">
-                        <Clock className="mr-1 h-4 w-4" />
-                        <span className="text-sm">
-                          {DateTimeUtils.formatTime(new Date(hotel.checkinTime.from))} -{' '}
-                          {DateTimeUtils.formatTime(new Date(hotel.checkinTime.to))}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center text-gray-600">
-                        <Clock className="mr-1 h-4 w-4" />
-                        <span className="text-sm">
-                          {DateTimeUtils.formatTime(hotel.checkoutTime)}
-                        </span>
-                      </div>
-                    </TableCell>
+            {sortedHotels.length === 0 ? (
+              <div className="flex h-full flex-col items-center justify-center">
+                <Image src="/result-not-found.svg" alt="not found" width={200} height={200} />
+                <p>
+                  Không tìm thấy khách sạn nào phù hợp với tiêu chí tìm kiếm của bạn. Vui lòng thử
+                  lại với các tiêu chí khác.
+                </p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-gray-50">
+                    {/* <TableHead className="font-semibold">#</TableHead> */}
+                    <TableHead
+                      onClick={() => handleSort('name')}
+                      className="cursor-pointer font-semibold select-none"
+                    >
+                      <div className="flex items-center">Tên khách sạn {getSortIcon('name')}</div>
+                    </TableHead>
+                    <TableHead
+                      onClick={() => handleSort('address')}
+                      className="cursor-pointer font-semibold select-none"
+                    >
+                      <div className="flex items-center">Địa chỉ {getSortIcon('address')}</div>
+                    </TableHead>
+                    <TableHead
+                      onClick={() => handleSort('owner')}
+                      className="cursor-pointer font-semibold select-none"
+                    >
+                      <div className="flex items-center">Chủ sở hữu {getSortIcon('owner')}</div>
+                    </TableHead>
+                    <TableHead
+                      onClick={() => handleSort('price')}
+                      className="cursor-pointer font-semibold select-none"
+                    >
+                      <div className="flex items-center">Giá {getSortIcon('price')}</div>
+                    </TableHead>
 
-                    <TableCell>
-                      <DropdownMenu modal={false}>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48">
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setSelectedHotel(hotel);
-                              setDetailsDialogOpen(true);
-                            }}
-                          >
-                            <Eye className="mr-2 h-4 w-4" />
-                            Chi tiết
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setSelectedHotel(hotel);
-                              setEditDialogOpen(true);
-                            }}
-                          >
-                            <Edit className="mr-2 h-4 w-4" />
-                            Chỉnh sửa
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setSelectedHotel(hotel);
-                              setDeleteDialogOpen(true);
-                            }}
-                            className="text-red-600 focus:text-red-600"
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Xóa
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
+                    <TableHead className="font-semibold">Chính sách</TableHead>
+                    <TableHead className="font-semibold">Check-in</TableHead>
+                    <TableHead className="font-semibold">Check-out</TableHead>
+                    <TableHead className="text-center font-semibold">Hành động</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {sortedHotels.map((hotel) => (
+                    <TableRow key={hotel.id} className="hover:bg-gray-50">
+                      <TableCell>
+                        <div className="font-medium text-gray-900">{hotel.name}</div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center text-gray-600">
+                          <MapPin className="mr-1 h-4 w-4" />
+                          <span className="max-w-[200px] truncate">{hotel.address}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center text-gray-600">
+                          <User className="mr-1 h-4 w-4" />
+                          {hotel.owner.fullName}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center text-gray-600">
+                          <User className="mr-1 h-4 w-4" />
+                          {hotel?.priceHotel.toLocaleString('vi-VN')}đ
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center text-gray-600">
+                          {getCancelPolicyLabel(hotel.cancelPolicy)}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center text-gray-600">
+                          <Clock className="mr-1 h-4 w-4" />
+                          <span className="text-sm">
+                            {DateTimeUtils.formatTime(new Date(hotel.checkinTime.from))} -{' '}
+                            {DateTimeUtils.formatTime(new Date(hotel.checkinTime.to))}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center text-gray-600">
+                          <Clock className="mr-1 h-4 w-4" />
+                          <span className="text-sm">
+                            {DateTimeUtils.formatTime(hotel.checkoutTime)}
+                          </span>
+                        </div>
+                      </TableCell>
+
+                      <TableCell>
+                        <DropdownMenu modal={false}>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setSelectedHotel(hotel);
+                                setDetailsDialogOpen(true);
+                              }}
+                            >
+                              <Eye className="mr-2 h-4 w-4" />
+                              Chi tiết
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setSelectedHotel(hotel);
+                                setEditDialogOpen(true);
+                              }}
+                            >
+                              <Edit className="mr-2 h-4 w-4" />
+                              Chỉnh sửa
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setSelectedHotel(hotel);
+                                setDeleteDialogOpen(true);
+                              }}
+                              className="text-red-600 focus:text-red-600"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Xóa
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </div>
           <Pagination pagination={pagination} />
         </CardContent>
@@ -380,7 +583,6 @@ function HotelDetailsDialog({ hotel, ...props }: HotelDetailsDialogProps) {
             </div>
             Thông tin chi tiết khách sạn
           </DialogTitle>
-          {/* <DialogDescription>Thông tin chi tiết về khách sạn.</DialogDescription> */}
         </DialogHeader>
 
         {/* Scrollable content */}
@@ -388,7 +590,6 @@ function HotelDetailsDialog({ hotel, ...props }: HotelDetailsDialogProps) {
           {hotel && (
             <div className="space-y-6">
               <div className="space-y-6">
-                {/* Ảnh khách sạn (chiếm toàn bộ chiều ngang) */}
                 <div className="relative h-64 w-full overflow-hidden rounded-xl shadow-lg">
                   {Array.isArray(hotel.images) && hotel.images[0] ? (
                     <Image src={hotel.images[0]} alt={hotel.name} fill className="object-cover" />
@@ -402,7 +603,9 @@ function HotelDetailsDialog({ hotel, ...props }: HotelDetailsDialogProps) {
                 {/* Thông tin khách sạn */}
                 <div className="space-y-4 px-2">
                   <div className="flex flex-wrap items-center justify-between gap-4">
-                    <h2 className="text-2xl font-bold text-gray-900">{hotel.name}</h2>
+                    <h2 className="text-2xl font-bold text-gray-900">
+                      Tên khách sạn: {hotel.name}
+                    </h2>
                     <div className="flex items-center gap-3">
                       <div className="flex items-center gap-1">
                         <span className="text-lg font-semibold">{hotel.rating}</span>
@@ -417,7 +620,13 @@ function HotelDetailsDialog({ hotel, ...props }: HotelDetailsDialogProps) {
                   {/* Địa chỉ */}
                   <div className="flex items-start gap-2 text-gray-700">
                     <MapPin className="mt-0.5 h-5 w-5 text-emerald-600" />
+                    Địa chỉ:
                     <p>{hotel.address}</p>
+                  </div>
+                  <div className="flex items-start gap-2 text-gray-700">
+                    <PhoneCall className="mt-0.5 h-5 w-5 text-emerald-600" />
+                    Số điện thoại:
+                    <p>{hotel.phoneNumber}</p>
                   </div>
                   <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-900">
                     <User className="h-5 w-5 text-gray-600" />
@@ -461,7 +670,6 @@ function HotelDetailsDialog({ hotel, ...props }: HotelDetailsDialogProps) {
                 </CardContent>
               </Card>
 
-              {/* Amenities */}
               <Card>
                 <CardContent className="p-4">
                   <h3 className="mb-4 text-lg font-semibold text-gray-900">Tiện nghi khách sạn</h3>
@@ -475,6 +683,16 @@ function HotelDetailsDialog({ hotel, ...props }: HotelDetailsDialogProps) {
                         <span className="text-gray-700">{amenity}</span>
                       </div>
                     ))}
+                  </div>
+
+                  <h3 className="mt-6 mb-4 text-lg font-semibold text-gray-900">
+                    Chính sách hủy phòng
+                  </h3>
+                  <div className="flex items-center">
+                    <div className="h-3 w-3 rounded-full bg-red-500"></div>
+                    <span className="text-gray-700">
+                      {getCancelPolicyLabel(hotel.cancelPolicy)}
+                    </span>
                   </div>
                 </CardContent>
               </Card>

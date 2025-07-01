@@ -1,4 +1,4 @@
-import { DiscountManagement } from '@/modules/manager/pages/discount/discount.page';
+import { DiscountManagement } from '@/modules/discount/pages/manager-discount.page';
 
 export default function ManageDiscountPage() {
   return (

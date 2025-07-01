@@ -1,7 +1,7 @@
 import { HttpClient } from '@/base/lib';
 import { CommonSearchParams, SuccessResponse } from '@/base/types';
 
-import { CreateUserSchema, UpdateUserSchema, User } from '../types';
+import { CreateUserSchema, UpdateRoleUserSchema, UpdateUserSchema, User } from '../types';
 
 class UserService extends HttpClient {
   constructor() {
@@ -23,12 +23,14 @@ class UserService extends HttpClient {
   public getAllUsers(params?: CommonSearchParams) {
     return this.get<SuccessResponse<User[]>>('/users', {
       params,
+      isPrivateRoute: true,
     });
   }
 
   public getAllDeletedUsers(params?: CommonSearchParams) {
     return this.get<SuccessResponse<User[]>>('/users/deleted', {
       params,
+      isPrivateRoute: true,
     });
   }
 
@@ -44,13 +46,23 @@ class UserService extends HttpClient {
     return (payload: UpdateUserSchema) =>
       this.patch<SuccessResponse<User>>(`/users/${id}`, payload);
   }
+  public updateRoleUser(id: string) {
+    return (payload: UpdateRoleUserSchema) =>
+      this.patch<SuccessResponse<User>>(`/users/${id}`, payload);
+  }
 
   public softDeleteUser(id: string) {
-    return this.delete(`/users/${id}`);
+    return this.delete(`/users/delete/${id}`, { isPrivateRoute: true });
   }
 
   public restoreUser(id: string) {
-    return this.patch<SuccessResponse<User>>(`/users/restore/${id}`);
+    return this.patch<SuccessResponse<User>>(
+      `/users/restore/${id}`,
+      {},
+      {
+        isPrivateRoute: true,
+      },
+    );
   }
 }
 

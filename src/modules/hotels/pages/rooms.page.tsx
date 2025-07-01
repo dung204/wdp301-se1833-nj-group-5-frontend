@@ -29,10 +29,10 @@ import { useState } from 'react';
 import { Badge } from '@/base/components/ui/badge';
 import { Button } from '@/base/components/ui/button';
 import { Card, CardContent } from '@/base/components/ui/card';
-import { hotelsService } from '@/modules/hotels';
+import { Room, RoomSearchParams } from '@/modules/rooms';
 import { roomsService } from '@/modules/rooms/services/rooms.service';
 
-import type { Room, RoomSearchParams } from '../types';
+import { hotelsService } from '../services/hotels.service';
 
 type RoomsPageProps = {
   searchParams: RoomSearchParams;

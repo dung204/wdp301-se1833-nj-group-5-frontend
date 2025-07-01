@@ -27,6 +27,13 @@ class RoomService extends HttpClient {
     });
   }
 
+  public getRoomsByAdmin(params?: CommonSearchParams) {
+    return this.get<SuccessResponse<Room[]>>('/rooms/admin', {
+      params,
+      isPrivateRoute: true,
+    });
+  }
+
   public getRoomById(id: string) {
     return this.get<SuccessResponse<Room>>(`/rooms/${id}`);
   }

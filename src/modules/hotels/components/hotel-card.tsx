@@ -141,7 +141,7 @@ export function HotelCard({ hotel }: HotelCardProps) {
                   <span className="hidden sm:inline">Thêm vào yêu thích</span>
                   <span className="inline sm:hidden">Yêu thích</span>
                 </Button>
-                <Link href={`/hotel/${hotel.id}`}>
+                <Link href={`/hotels/${hotel.id}`}>
                   <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
                     Xem chi tiết
                   </Button>
