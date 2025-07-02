@@ -7,6 +7,8 @@ import axios, {
   InternalAxiosRequestConfig,
 } from 'axios';
 
+import { TokenManager } from './token-manager.lib';
+
 interface CustomAxiosRequestConfig extends AxiosRequestConfig {
   isPrivateRoute?: boolean;
 }
@@ -33,6 +35,7 @@ export class HttpClient {
   }
 
   protected async onSuccessRequest(config: CustomInternalAxiosRequestConfig) {
+    // Set base URL
     if (config.isPrivateRoute) {
       config.headers.set('Is-Private-Route', 'true');
       config.baseURL = '/api';
@@ -42,14 +45,50 @@ export class HttpClient {
           ? (await import('../config/env-client.config')).envClient.NEXT_PUBLIC_API_URL
           : (await import('../config/env-server.config')).envServer.API_URL;
     }
+
+    // Add authentication token if available
+    const accessToken = TokenManager.getAccessToken();
+    if (accessToken) {
+      config.headers.set('Authorization', `Bearer ${accessToken}`);
+      // Debug: Token added successfully
+    } else {
+      console.warn('⚠️ No auth token found for request:', config.url);
+    }
+
     return config;
   }
 
   protected onSuccessResponse(response: AxiosResponse) {
-    return response.data;
+    // Automatically detect and store tokens from login/register responses
+    const responseData = response.data;
+    const isAuthResponse =
+      (response.config.url?.includes('/auth/login') ||
+        response.config.url?.includes('/auth/register')) &&
+      responseData?.data?.accessToken;
+
+    if (isAuthResponse) {
+      const { accessToken, refreshToken, user } = responseData.data;
+      TokenManager.setTokens(accessToken, refreshToken);
+      if (user) {
+        TokenManager.setUser(user);
+      }
+    }
+
+    return responseData;
   }
 
   protected onResponseFailed(error: AxiosError) {
+    // Handle 401 Unauthorized - token expired or invalid
+    if (error.response?.status === 401) {
+      // Clear tokens and redirect to login
+      TokenManager.clearTokens();
+
+      // Redirect to login page if we're on the client side
+      if (typeof window !== 'undefined') {
+        window.location.href = '/auth/login';
+      }
+    }
+
     // TODO: Additional handling for different status codes here
     throw error;
   }
