@@ -48,13 +48,16 @@ export function MessageBubble({
 
   return (
     <div className={cn('flex max-w-[80%] gap-3', isOwn && 'ml-auto flex-row-reverse')}>
-      {showAvatar && (
+      {showAvatar ? (
         <Avatar className="mt-1 h-8 w-8">
           <AvatarImage src="" />
           <AvatarFallback>
             <User className="h-4 w-4" />
           </AvatarFallback>
         </Avatar>
+      ) : (
+        // Spacer to maintain alignment when avatar is hidden
+        <div className="w-8" />
       )}
 
       <div className={cn('flex flex-col gap-1', isOwn && 'items-end')}>
