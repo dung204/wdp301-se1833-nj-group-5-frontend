@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/base/components/ui/button';
 import { LoadingIndicator } from '@/base/components/ui/loading-indicator';
 import { ScrollArea } from '@/base/components/ui/scroll-area';
+import { cn } from '@/base/lib';
 
 import { useConversationMessages, useDeleteMessage, useMarkAsRead, useSendMessage } from '../hooks';
 import { Conversation, MessageType } from '../types';
@@ -127,9 +128,9 @@ export function MessageThread({
   }
 
   return (
-    <div className={className}>
+    <div className={cn('flex h-full flex-col', className)}>
       {/* Header */}
-      <div className="bg-background border-b p-4">
+      <div className="bg-background flex-shrink-0 border-b p-4">
         <div className="flex items-center gap-3">
           {onBack && (
             <Button variant="ghost" size="sm" onClick={onBack}>
@@ -151,44 +152,48 @@ export function MessageThread({
       </div>
 
       {/* Messages */}
-      <ScrollArea className="flex-1 p-4" onScrollCapture={handleScroll}>
-        <div className="space-y-4">
-          {messages.length === 0 ? (
-            <div className="text-muted-foreground py-8 text-center">
-              <p>No messages yet. Start the conversation!</p>
-            </div>
-          ) : (
-            messages.map((message, index) => {
-              const isOwn = message.sender.id === currentUserId;
-              const previousMessage = index > 0 ? messages[index - 1] : null;
-              const showAvatar =
-                !previousMessage || previousMessage.sender.id !== message.sender.id;
+      <ScrollArea className="min-h-0 flex-1 overflow-hidden" onScrollCapture={handleScroll}>
+        <div className="p-4">
+          <div className="space-y-4">
+            {messages.length === 0 ? (
+              <div className="text-muted-foreground py-8 text-center">
+                <p>No messages yet. Start the conversation!</p>
+              </div>
+            ) : (
+              messages.map((message, index) => {
+                const isOwn = message.sender.id === currentUserId;
+                const previousMessage = index > 0 ? messages[index - 1] : null;
+                const showAvatar =
+                  !previousMessage || previousMessage.sender.id !== message.sender.id;
 
-              return (
-                <MessageBubble
-                  key={message.id}
-                  message={message}
-                  isOwn={isOwn}
-                  showAvatar={showAvatar}
-                  onMarkAsRead={() => handleMarkAsRead(message.id)}
-                  onDelete={() => handleDeleteMessage(message.id)}
-                  canDelete={isOwn}
-                />
-              );
-            })
-          )}
-          <div ref={messagesEndRef} />
+                return (
+                  <MessageBubble
+                    key={message.id}
+                    message={message}
+                    isOwn={isOwn}
+                    showAvatar={showAvatar}
+                    onMarkAsRead={() => handleMarkAsRead(message.id)}
+                    onDelete={() => handleDeleteMessage(message.id)}
+                    canDelete={isOwn}
+                  />
+                );
+              })
+            )}
+            <div ref={messagesEndRef} />
+          </div>
         </div>
       </ScrollArea>
 
       {/* Message input */}
-      <MessageInput
-        bookingId={conversation.booking.id}
-        receiverId={otherParticipant.id}
-        onSend={handleSendMessage}
-        disabled={sendMessageMutation.isPending}
-        placeholder={`Message ${otherParticipant.firstName}...`}
-      />
+      <div className="flex-shrink-0 border-t">
+        <MessageInput
+          bookingId={conversation.booking.id}
+          receiverId={otherParticipant.id}
+          onSend={handleSendMessage}
+          disabled={sendMessageMutation.isPending}
+          placeholder={`Message ${otherParticipant.firstName}...`}
+        />
+      </div>
     </div>
   );
 }

@@ -74,14 +74,14 @@ export function MessageBubble({
 
           {message.messageType === MessageType.IMAGE && message.attachmentUrl && (
             <div className="space-y-2">
-              <div className="relative max-w-sm">
+              <div className="relative w-full max-w-[280px]">
                 <Image
                   src={message.attachmentUrl}
                   alt="Message attachment"
-                  width={400}
-                  height={300}
-                  className="h-auto w-full rounded object-contain"
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  width={280}
+                  height={200}
+                  className="h-auto max-h-[300px] w-full rounded object-contain"
+                  sizes="280px"
                   onError={(e) => {
                     console.error('Failed to load image:', message.attachmentUrl);
                     // Optionally hide the image or show a placeholder
