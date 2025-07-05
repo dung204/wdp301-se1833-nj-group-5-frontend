@@ -64,7 +64,9 @@ export function MessageBubble({
         <div
           className={cn(
             'relative max-w-xs rounded-lg px-3 py-2 lg:max-w-md',
-            isOwn ? 'bg-primary text-primary-foreground' : 'bg-muted',
+            isOwn
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-muted/50 border-border/50 dark:bg-muted border',
           )}
         >
           {/* Message content */}
@@ -102,9 +104,9 @@ export function MessageBubble({
                 href={message.attachmentUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="bg-background/10 hover:bg-background/20 flex items-center gap-2 rounded p-2 transition-colors"
+                className="bg-background/10 hover:bg-background/20 dark:bg-background/30 dark:hover:bg-background/40 border-border/30 flex items-center gap-2 rounded border p-2 transition-colors"
               >
-                <div className="bg-background/20 flex h-8 w-8 items-center justify-center rounded">
+                <div className="bg-background/20 dark:bg-background/40 flex h-8 w-8 items-center justify-center rounded">
                   📄
                 </div>
                 <span className="text-sm font-medium">View File</span>

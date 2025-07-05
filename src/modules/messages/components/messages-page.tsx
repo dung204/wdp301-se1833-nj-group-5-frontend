@@ -7,6 +7,7 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from '@/base/components/ui/resizable';
+import { ThemeToggler } from '@/base/components/ui/theme-toggler';
 import { cn } from '@/base/lib';
 
 import { Conversation } from '../types';
@@ -36,9 +37,12 @@ export function MessagesPage({ currentUserId, className }: MessagesPageProps) {
     <div className={cn('flex h-screen flex-col', className)}>
       {/* Header */}
       <div className="bg-background border-b p-4">
-        <div className="flex items-center gap-2">
-          <MessageSquare className="h-5 w-5" />
-          <h1 className="text-lg font-semibold">Messages</h1>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <MessageSquare className="h-5 w-5" />
+            <h1 className="text-lg font-semibold">Messages</h1>
+          </div>
+          <ThemeToggler />
         </div>
       </div>
 

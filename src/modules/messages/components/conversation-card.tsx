@@ -35,7 +35,7 @@ export function ConversationCard({ conversation, isSelected, onClick }: Conversa
   return (
     <Card
       className={cn(
-        'cursor-pointer transition-all hover:shadow-md',
+        'cursor-pointer transition-all hover:shadow-md hover:shadow-black/5 dark:hover:shadow-black/20',
         isSelected && 'ring-primary ring-2 ring-offset-2',
       )}
       onClick={onClick}
