@@ -7,6 +7,7 @@ import { ScrollArea } from '@/base/components/ui/scroll-area';
 
 import { useConversationMessages, useDeleteMessage, useMarkAsRead, useSendMessage } from '../hooks';
 import { Conversation, MessageType } from '../types';
+import { formatBookingDisplay } from '../utils';
 import { MessageBubble } from './message-bubble';
 import { MessageInput } from './message-input';
 
@@ -103,6 +104,12 @@ export function MessageThread({
   const otherParticipant =
     conversation.customer.id === currentUserId ? conversation.hotelOwner : conversation.customer;
 
+  // Get formatted booking display
+  const { hotelName, roomInfo } = formatBookingDisplay(
+    conversation.booking.hotel,
+    conversation.booking.room,
+  );
+
   if (isLoading) {
     return (
       <div className="flex h-64 items-center justify-center">
@@ -134,10 +141,10 @@ export function MessageThread({
               {otherParticipant.firstName} {otherParticipant.lastName}
             </h2>
             <p className="text-muted-foreground text-sm">
-              {conversation.booking.hotel.name} - Room {conversation.booking.room.roomNumber}
+              {hotelName} - {roomInfo}
             </p>
             <p className="text-muted-foreground text-xs">
-              Booking: {conversation.booking.orderCode}
+              Booking ID: {conversation.booking.id?.substring(0, 8) || 'N/A'}
             </p>
           </div>
         </div>

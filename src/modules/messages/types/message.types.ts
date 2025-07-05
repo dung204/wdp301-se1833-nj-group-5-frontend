@@ -26,20 +26,26 @@ export interface UserProfile {
 // Booking type
 export interface BookingInfo {
   id: string;
-  hotel: {
-    id: string;
-    name: string;
-    address?: string;
-  };
-  room: {
-    id: string;
-    roomNumber: string;
-    roomType: string;
-  };
+  hotel:
+    | {
+        id: string;
+        name: string;
+        address?: string;
+      }
+    | string
+    | null;
+  room:
+    | {
+        id: string;
+        roomNumber: string;
+        roomType: string;
+      }
+    | string
+    | null;
   checkIn: string;
   checkOut: string;
   status: string;
-  orderCode: string;
+  orderCode: string | null;
 }
 
 // Message type

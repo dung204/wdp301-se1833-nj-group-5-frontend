@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader } from '@/base/components/ui/card';
 import { cn } from '@/base/lib';
 
 import { Conversation } from '../types';
+import { formatBookingDisplay } from '../utils';
 
 interface ConversationCardProps {
   conversation: Conversation;
@@ -27,6 +28,9 @@ export function ConversationCard({ conversation, isSelected, onClick }: Conversa
 
   const otherParticipant = lastMessage.sender.id === customer.id ? hotelOwner : customer;
   const isCustomerSender = lastMessage.sender.id === customer.id;
+
+  // Get formatted booking display
+  const { hotelName, roomInfo } = formatBookingDisplay(booking.hotel, booking.room);
 
   return (
     <Card
@@ -55,9 +59,11 @@ export function ConversationCard({ conversation, isSelected, onClick }: Conversa
                 </Badge>
               </div>
               <p className="text-muted-foreground mt-1 text-xs">
-                {booking.hotel.name} - Room {booking.room.roomNumber}
+                {hotelName} - {roomInfo}
               </p>
-              <p className="text-muted-foreground text-xs">Booking: {booking.orderCode}</p>
+              <p className="text-muted-foreground text-xs">
+                Booking ID: {booking.id?.substring(0, 8) || 'N/A'}
+              </p>
             </div>
           </div>
           <div className="flex flex-col items-end space-y-1">

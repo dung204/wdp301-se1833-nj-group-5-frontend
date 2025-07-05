@@ -7,6 +7,7 @@ import { ScrollArea } from '@/base/components/ui/scroll-area';
 
 import { useConversations } from '../hooks';
 import { Conversation } from '../types';
+import { formatBookingDisplay } from '../utils';
 import { ConversationCard } from './conversation-card';
 
 interface ConversationsListProps {
@@ -36,13 +37,20 @@ export function ConversationsList({
     const query = searchQuery.toLowerCase();
     const customerName =
       `${conversation.customer.firstName} ${conversation.customer.lastName}`.toLowerCase();
-    const hotelName = conversation.booking.hotel.name.toLowerCase();
-    const orderCode = conversation.booking.orderCode.toLowerCase();
+
+    // Use the formatBookingDisplay utility to get hotel name
+    const { hotelName } = formatBookingDisplay(
+      conversation.booking.hotel,
+      conversation.booking.room,
+    );
+    const hotelNameLower = hotelName.toLowerCase();
+
+    const orderCode = conversation.booking.orderCode?.toLowerCase() || '';
     const lastMessageContent = conversation.lastMessage.content.toLowerCase();
 
     return (
       customerName.includes(query) ||
-      hotelName.includes(query) ||
+      hotelNameLower.includes(query) ||
       orderCode.includes(query) ||
       lastMessageContent.includes(query)
     );
