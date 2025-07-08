@@ -33,8 +33,14 @@ export const updateRoleUserSchema = z.object({
   role: z.enum(['CUSTOMER', 'HOTEL_OWNER']).optional(), // 👈 Thêm dòng này
 });
 
+export const upgradeRoleSchema = z.object({
+  targetRole: z.literal(Role.HOTEL_OWNER),
+  reason: z.string().optional(),
+});
+
 export type CreateUserSchema = z.infer<typeof createUserSchema>;
 export type UpdateRoleUserSchema = z.infer<typeof updateRoleUserSchema>;
+export type UpgradeRoleSchema = z.infer<typeof upgradeRoleSchema>;
 
 export const updateUserSchema = createUserSchema.partial();
 

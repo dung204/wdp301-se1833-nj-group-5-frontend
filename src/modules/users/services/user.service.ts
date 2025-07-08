@@ -1,7 +1,13 @@
 import { HttpClient } from '@/base/lib';
 import { CommonSearchParams, SuccessResponse } from '@/base/types';
 
-import { CreateUserSchema, UpdateRoleUserSchema, UpdateUserSchema, User } from '../types';
+import {
+  CreateUserSchema,
+  UpdateRoleUserSchema,
+  UpdateUserSchema,
+  UpgradeRoleSchema,
+  User,
+} from '../types';
 
 class UserService extends HttpClient {
   constructor() {
@@ -63,6 +69,12 @@ class UserService extends HttpClient {
         isPrivateRoute: true,
       },
     );
+  }
+
+  public upgradeRole(payload: UpgradeRoleSchema) {
+    return this.patch<SuccessResponse<User>>('/users/upgrade-role', payload, {
+      isPrivateRoute: true,
+    });
   }
 }
 
