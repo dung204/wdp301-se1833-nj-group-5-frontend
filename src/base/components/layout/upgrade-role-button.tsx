@@ -1,6 +1,7 @@
 'use client';
 
-import { Crown, Loader2 } from 'lucide-react';
+import { Crown, Loader2, Settings } from 'lucide-react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -19,18 +20,30 @@ import { Textarea } from '@/base/components/ui/textarea';
 import { Role } from '@/modules/auth';
 import { userService } from '@/modules/users';
 
-interface UpgradeRoleButtonProps {
+interface RoleManagementButtonProps {
   userRole: Role;
   onUpgradeSuccess?: () => void;
 }
 
-export function UpgradeRoleButton({ userRole, onUpgradeSuccess }: UpgradeRoleButtonProps) {
+export function RoleManagementButton({ userRole, onUpgradeSuccess }: RoleManagementButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [reason, setReason] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
-  // Only show for CUSTOMER role
+  // Show manage hotel button for HOTEL_OWNER
+  if (userRole === Role.HOTEL_OWNER) {
+    return (
+      <Button asChild variant="outline" size="sm" className="gap-2">
+        <Link href="/manager/dashboard">
+          <Settings className="h-4 w-4" />
+          Quản lý khách sạn
+        </Link>
+      </Button>
+    );
+  }
+
+  // Only show upgrade button for CUSTOMER role
   if (userRole !== Role.CUSTOMER) {
     return null;
   }
@@ -48,15 +61,30 @@ export function UpgradeRoleButton({ userRole, onUpgradeSuccess }: UpgradeRoleBut
           description: 'Tài khoản của bạn đã được nâng cấp thành Chủ khách sạn.',
         });
 
-        // Refresh the page to update the user context
+        // Close dialog first
+        setIsOpen(false);
+        setReason('');
+
+        // Update the user cookie with the new role
+        const updatedUser = response.data;
+        await fetch('/api/auth/update-user-cookie', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            id: updatedUser.id,
+            fullName: updatedUser.fullName,
+            role: updatedUser.role,
+            gender: updatedUser.gender,
+          }),
+        });
+
+        // Reload the page to update the user context and show the new button
         router.refresh();
 
         // Call callback if provided
         onUpgradeSuccess?.();
-
-        // Close dialog
-        setIsOpen(false);
-        setReason('');
       }
     } catch (error) {
       toast.error('Nâng cấp tài khoản thất bại', {
@@ -131,3 +159,6 @@ export function UpgradeRoleButton({ userRole, onUpgradeSuccess }: UpgradeRoleBut
     </Dialog>
   );
 }
+
+// Backward compatibility export
+export { RoleManagementButton as UpgradeRoleButton };

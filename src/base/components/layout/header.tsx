@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Button } from '@/base/components/ui/button';
 import { userSchema } from '@/modules/users';
 
-import { UpgradeRoleButton } from './upgrade-role-button';
+import { RoleManagementButton } from './upgrade-role-button';
 import { UserActions } from './user-actions';
 
 export async function Header() {
@@ -40,7 +40,7 @@ export async function Header() {
         </nav>
 
         <div className="flex items-center gap-2">
-          {user && <UpgradeRoleButton userRole={user.role} />}
+          {user && <RoleManagementButton userRole={user.role} />}
           <UserActions user={user} />
           <Button variant="ghost" size="icon" className="text-gray-500">
             <ShoppingCart />
