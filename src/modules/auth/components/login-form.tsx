@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation } from '@tanstack/react-query';
-import axios, { AxiosError, HttpStatusCode } from 'axios';
+import { AxiosError, HttpStatusCode } from 'axios';
 import { AlertCircleIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -24,16 +24,7 @@ export function LoginForm({ onLoginSuccess }: LoginFormProps) {
     error,
   } = useMutation({
     mutationFn: (payload: LoginSchema) => authService.login(payload),
-    onSuccess: async ({ data }) => {
-      await axios.post('/api/auth/set-cookie', {
-        data: {
-          ...data,
-          user: {
-            ...data.user,
-            fullName: data.user.fullName && encodeURIComponent(data.user.fullName),
-          },
-        },
-      });
+    onSuccess: async () => {
       router.replace('/');
       onLoginSuccess?.();
     },

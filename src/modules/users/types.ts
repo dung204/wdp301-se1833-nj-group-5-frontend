@@ -17,7 +17,11 @@ export const gender = {
 
 export const userSchema = baseEntitySchema.extend({
   email: z.string().trim(),
-  fullName: z.string().trim().optional(),
+  fullName: z
+    .string()
+    .trim()
+    .transform((val) => decodeURIComponent(val))
+    .optional(),
   role: z.nativeEnum(Role),
   gender: z.nativeEnum(Gender).optional(),
 });

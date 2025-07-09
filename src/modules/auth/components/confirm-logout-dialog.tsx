@@ -1,6 +1,6 @@
 'use client';
 
-import axios from 'axios';
+import { useMutation } from '@tanstack/react-query';
 import { usePathname } from 'next/navigation';
 import { ComponentProps } from 'react';
 
@@ -15,21 +15,25 @@ import {
 } from '@/base/components/ui/alert-dialog';
 import { buttonVariantsFn } from '@/base/components/ui/button';
 
+import { authService } from '../services/auth.service';
+
 export function ConfirmLogoutDialog(props: ComponentProps<typeof AlertDialog>) {
   const pathname = usePathname();
 
-  const handleLogout = async () => {
-    await axios.delete('/api/auth/delete-cookie');
-    if (
-      pathname.startsWith('/manager') ||
-      pathname.startsWith('/profile') ||
-      pathname.startsWith('/favorites')
-    ) {
-      window.location.href = '/';
-    } else {
-      window.location.reload();
-    }
-  };
+  const { mutate: triggerLogout } = useMutation({
+    mutationFn: () => authService.logout(),
+    onSuccess: () => {
+      if (
+        pathname.startsWith('/manager') ||
+        pathname.startsWith('/profile') ||
+        pathname.startsWith('/favorites')
+      ) {
+        window.location.href = '/';
+      } else {
+        window.location.reload();
+      }
+    },
+  });
 
   return (
     <AlertDialog {...props}>
@@ -43,7 +47,7 @@ export function ConfirmLogoutDialog(props: ComponentProps<typeof AlertDialog>) {
         <AlertDialogFooter>
           <AlertDialogCancel>Hủy bỏ</AlertDialogCancel>
           <AlertDialogAction
-            onClick={handleLogout}
+            onClick={() => triggerLogout()}
             className={buttonVariantsFn({ variant: 'danger' })}
           >
             Tiếp tục

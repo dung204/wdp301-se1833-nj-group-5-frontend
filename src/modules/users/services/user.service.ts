@@ -1,3 +1,5 @@
+import axios from 'axios';
+
 import { HttpClient } from '@/base/lib';
 import { CommonSearchParams, SuccessResponse } from '@/base/types';
 
@@ -20,10 +22,14 @@ class UserService extends HttpClient {
     });
   }
 
-  public updateUserProfile(payload: UpdateUserSchema) {
-    return this.patch<SuccessResponse<User>>(`/users/profile`, payload, {
+  public async updateUserProfile(payload: UpdateUserSchema) {
+    const res = await this.patch<SuccessResponse<User>>(`/users/profile`, payload, {
       isPrivateRoute: true,
     });
+
+    await axios.post('/api/auth/set-user', res.data);
+
+    return res;
   }
 
   public getAllUsers(params?: CommonSearchParams) {

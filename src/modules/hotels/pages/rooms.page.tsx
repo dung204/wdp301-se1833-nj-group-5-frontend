@@ -92,7 +92,7 @@ export function RoomsPage({ searchParams, hotelId }: RoomsPageProps) {
                   <div className="group relative col-span-2 row-span-2 overflow-hidden rounded-xl">
                     {Array.isArray(hotel.images) && hotel.images[0] && (
                       <Image
-                        src={hotel.images[0] || '/placeholder.svg'}
+                        src={hotel.images[0].url || '/placeholder.svg'}
                         alt="Ảnh chính khách sạn"
                         fill
                         className="object-cover transition-transform duration-500 group-hover:scale-105"
@@ -103,10 +103,10 @@ export function RoomsPage({ searchParams, hotelId }: RoomsPageProps) {
 
                   {/* Smaller images */}
                   {Array.isArray(hotel.images) &&
-                    hotel.images.slice(1, 7).map((imgUrl, index) => (
+                    hotel.images.slice(1, 7).map((image, index) => (
                       <div key={index} className="group relative overflow-hidden rounded-xl">
                         <Image
-                          src={imgUrl || '/placeholder.svg'}
+                          src={image.url || '/placeholder.svg'}
                           alt={`Ảnh khách sạn ${index + 1}`}
                           fill
                           className="object-cover transition-transform duration-500 group-hover:scale-105"

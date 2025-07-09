@@ -378,7 +378,7 @@ export function DiscountManagement() {
                             className="flex items-start gap-3 rounded-lg bg-gray-50 p-3"
                           >
                             <Image
-                              src={hotel?.images[0]}
+                              src={hotel?.images[0].url}
                               alt={hotel.name}
                               className="h-12 w-12 rounded object-cover"
                             />
