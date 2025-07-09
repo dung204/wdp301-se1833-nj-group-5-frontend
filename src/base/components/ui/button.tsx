@@ -3,7 +3,7 @@ import { type VariantProps, cva } from 'class-variance-authority';
 import * as React from 'react';
 
 import { LoadingIndicator } from '@/base/components/ui/loading-indicator';
-import { cn } from '@/base/lib';
+import { cn } from '@/base/lib/index';
 
 const buttonVariants = [
   'default',

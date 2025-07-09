@@ -1,5 +1,5 @@
 import { format } from 'date-fns';
-import { ChevronDown, ClockIcon } from 'lucide-react';
+import { ChevronRight, ClockIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { DateRange } from 'react-day-picker';
@@ -90,7 +90,7 @@ export function TimeRangePicker({
               includeSeconds={includeSeconds}
             />
           </div>
-          <ChevronDown className="text-muted-foreground size-6" />
+          <ChevronRight className="text-muted-foreground size-6" />
           <div className="space-y-2">
             <TimeInput
               key={versionToInput}

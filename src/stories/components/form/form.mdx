@@ -168,8 +168,8 @@ import { z } from 'zod';
 
 <Form
   schema={z.object({
-    email: z.string().nonempty().email(),
-    password: z.string().nonempty(),
+    email: z.string().trim().nonempty().email(),
+    password: z.string().trim().nonempty(),
   })}
 />;
 ```
@@ -250,7 +250,7 @@ The following table lists the props that `<Form>` accepts:
       <td>`z.ZodObject`</td>
       <td>
         The Zod schema for the form. This is used to infer the fields used in the form & validate the form values before submission. The schema should be instantiated by `z.object()` function.
-        For example, if the form has fields for "email" and "password", the schema would be `z.object({ email: z.string().nonempty(), password: z.string().nonempty() })`.
+        For example, if the form has fields for "email" and "password", the schema would be `z.object({ email: z.string().trim().nonempty(), password: z.string().trim().nonempty() })`.
       </td>
     </tr>
     <tr>

@@ -1,7 +1,6 @@
 import axios from 'axios';
 import { decodeJwt } from 'jose';
 import { cookies } from 'next/headers';
-import url from 'url';
 
 import { envServer } from '@/base/config/env-server.config';
 
@@ -32,7 +31,7 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ path:
 
 async function handleFetch(path: string[], req: Request) {
   const fetchUrl =
-    url.resolve(envServer.API_URL!, path.join('/')) +
+    `${envServer.API_URL!}${path.join('/')}` +
     (!req.url.includes('?') ? '' : req.url.substring(req.url.indexOf('?')));
   const cookieStore = await cookies();
   let accessToken = cookieStore.get('accessToken')?.value;
@@ -52,7 +51,7 @@ async function handleFetch(path: string[], req: Request) {
         const {
           data: { data: payload },
         } = await axios.post(
-          '/auth/refresh-token',
+          '/auth/refresh',
           {
             refreshToken,
           },
@@ -63,7 +62,7 @@ async function handleFetch(path: string[], req: Request) {
         refreshToken = payload.refreshToken;
         user = JSON.stringify({
           ...payload.user,
-          displayName: encodeURIComponent(payload.user.displayName),
+          ...(payload.user.fullName && { fullName: encodeURIComponent(payload.user.fullName) }),
         });
         req.headers.set('Authorization', `Bearer ${accessToken}`);
         setNewTokens = true;

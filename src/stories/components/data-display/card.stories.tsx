@@ -66,8 +66,8 @@ export const Primary: Story = {
 };
 
 // const loginSchema = z.object({
-//   email: z.string().nonempty('Email must not be empty').email('Email is invalid'),
-//   password: z.string().nonempty('Password must not be empty'),
+//   email: z.string().trim().nonempty('Email must not be empty').email('Email is invalid'),
+//   password: z.string().trim().nonempty('Password must not be empty'),
 // });
 
 // type LoginSchema = z.infer<typeof loginSchema>;
@@ -176,8 +176,8 @@ export const Primary: Story = {
 // import { Input } from '@/components/ui/input';
 
 // const loginSchema = z.object({
-//   email: z.string().nonempty('Email must not be empty').email('Email is invalid'),
-//   password: z.string().nonempty('Password must not be empty'),
+//   email: z.string().trim().nonempty('Email must not be empty').email('Email is invalid'),
+//   password: z.string().trim().nonempty('Password must not be empty'),
 // });
 
 // type LoginSchema = z.infer<typeof loginSchema>;

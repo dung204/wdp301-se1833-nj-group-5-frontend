@@ -83,7 +83,7 @@ export const WithForm: Story = {
     <div className="w-[300px]">
       <Form
         schema={z.object({
-          username: z.string().min(2, {
+          username: z.string().trim().min(2, {
             message: 'Username must be at least 2 characters.',
           }),
         })}
@@ -114,7 +114,7 @@ export const WithForm: Story = {
 <div className="w-[300px]">
   <Form
     schema={z.object({
-      username: z.string().min(2, {
+      username: z.string().trim().min(2, {
         message: 'Username must be at least 2 characters.',
       }),
     })}

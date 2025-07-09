@@ -1,13 +1,19 @@
 export type ImagePayload = {
-  file: File;
+  file: File | null;
+  fileName?: string;
   previewUrl: string;
 };
 
-export type VideoPayload = {
-  file: File;
-  previewUrl: string;
-  thumbnailUrl: string;
+export type ImageResponse = {
+  fileName: string;
+  url: string;
 };
+
+export class VideoPayload {
+  file: File | null = null;
+  previewUrl!: string;
+  thumbnailUrl!: string;
+}
 
 export type MediaUploadResponse = {
   data: [
