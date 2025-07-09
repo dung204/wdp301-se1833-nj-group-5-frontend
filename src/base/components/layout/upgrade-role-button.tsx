@@ -67,7 +67,7 @@ export function RoleManagementButton({ userRole, onUpgradeSuccess }: RoleManagem
 
         // Update the user cookie with the new role
         const updatedUser = response.data;
-        await fetch('/api/auth/update-user-cookie', {
+        await fetch('/api/auth/set-user', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

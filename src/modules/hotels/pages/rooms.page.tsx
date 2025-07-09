@@ -269,17 +269,17 @@ export function RoomsPage({ searchParams, hotelId }: RoomsPageProps) {
             {rooms?.map((room: Room) => (
               <Card
                 key={room.id}
-                className="group overflow-hidden border-0 bg-white/80 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl"
+                className="group overflow-hidden border-0 bg-white/80 p-0 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl"
               >
                 <div className="lg:flex">
                   {/* Room Image */}
                   <div className="relative h-64 overflow-hidden lg:h-auto lg:w-96">
-                    {/* <Image
-                      src={Array.isArray(room.images) ? room.images[0] : room.images}
+                    <Image
+                      src={room.images[0].url}
                       alt={room.name}
                       fill
                       className="object-cover transition-transform duration-500 group-hover:scale-105"
-                    /> */}
+                    />
                     {room.isSoldOut && (
                       <div className="absolute inset-0 flex items-center justify-center bg-black/60">
                         <div className="flex items-center gap-2 rounded-full bg-red-500 px-4 py-2 font-semibold text-white">

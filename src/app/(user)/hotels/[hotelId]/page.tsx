@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 
-import { roomSearchParamsSchema } from '@/modules/hotels';
 import { RoomsPage } from '@/modules/hotels/pages/rooms.page';
+import { roomSearchParamsSchema } from '@/modules/rooms';
 
 type PageProps = {
   searchParams: Promise<unknown>;
