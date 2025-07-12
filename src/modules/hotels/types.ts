@@ -45,6 +45,8 @@ export type HotelSearchParams = Partial<z.infer<typeof hotelSearchParamsSchema>>
 
 export interface Hotel extends BaseEntity {
   name: string;
+  province: string;
+  commune: string;
   address: string;
   description: string;
   owner: User;
@@ -63,6 +65,8 @@ export interface Hotel extends BaseEntity {
 
 export const createHotelSchema = z.object({
   name: z.string().trim().nonempty('Tên khách sạn không được để trống'),
+  province: z.string().trim().nonempty('Vui lòng chọn tỉnh/thành phố'),
+  commune: z.string().trim().nonempty('Vui lòng chọn xã/phường'),
   address: z.string().trim().nonempty('Địa chỉ không được để trống'),
   description: z.string().trim().nonempty('Mô tả không được để trống'),
   phoneNumber: z.string().trim().nonempty('Số điện thoại không được để trống'),
