@@ -100,13 +100,13 @@ export function HotelForm(props: HotelFormProps) {
           name: 'phoneNumber',
           type: 'text',
           label: 'Số điện thoại',
-          placeholder: 'Nhập số điện thoại liên hệ',
+          placeholder: 'Nhập số điện thoại (VD: 0901234567)',
         },
         {
           name: 'priceHotel',
           type: 'text',
-          label: 'Giá tiền',
-          placeholder: 'Nhập giá tiền',
+          label: 'Giá tiền (VND)',
+          placeholder: 'Nhập giá tiền (tối thiểu 1,000 VND)',
         },
         {
           name: 'checkinTime',
