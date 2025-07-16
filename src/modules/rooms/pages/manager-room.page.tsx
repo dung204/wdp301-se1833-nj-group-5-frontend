@@ -81,8 +81,8 @@ export function RoomManagement({ searchParams }: RoomsPageProps) {
   });
   const router = useRouter();
   const [name, setName] = useState(searchParams.name ?? '');
-  const [minRate, setMinRate] = useState(searchParams.minPrice ?? RoomUtils.DEFAULT_MIN_PRICE);
-  const [maxRate, setMaxRate] = useState(searchParams.maxPrice ?? RoomUtils.DEFAULT_MAX_PRICE);
+  const [minRate, setMinRate] = useState(searchParams.minRate ?? RoomUtils.DEFAULT_MIN_PRICE);
+  const [maxRate, setMaxRate] = useState(searchParams.maxRate ?? RoomUtils.DEFAULT_MAX_PRICE);
   const [hotel, setHotel] = useState(searchParams.hotel ?? '');
   const handleApplyFilters = () => {
     const url = new URL(window.location.href);

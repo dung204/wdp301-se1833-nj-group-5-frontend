@@ -7,8 +7,8 @@ import { Hotel } from '../hotels';
 export const roomSearchParamsSchema = commonSearchParamsSchema.extend({
   name: z.string().trim().optional(),
   hotel: z.string().trim().optional(),
-  minPrice: z.coerce.number().nonnegative().optional().catch(undefined),
-  maxPrice: z.coerce.number().nonnegative().optional().catch(undefined),
+  minRate: z.coerce.number().nonnegative().optional().catch(undefined),
+  maxRate: z.coerce.number().nonnegative().optional().catch(undefined),
   rate: z.coerce.number().int().min(0).max(5).optional().catch(undefined),
   size: z.coerce.number().int().min(0).max(5).optional().catch(undefined),
 });
