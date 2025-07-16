@@ -2,7 +2,9 @@ import { z } from 'zod';
 
 import { BaseEntity, commonSearchParamsSchema } from '@/base/types';
 
+import { ImageResponse } from '../media';
 import { User } from '../users';
+import { HotelUtils } from './utils/hotel.utils';
 
 export enum CancelPolicy {
   NO_REFUND = 'NO_REFUND',
@@ -22,13 +24,24 @@ export const hotelSearchParamsSchema = commonSearchParamsSchema.extend({
   address: z.string().trim().optional(),
   minRating: z.coerce.number().int().min(0).max(5).optional().catch(undefined),
   maxRating: z.coerce.number().int().min(0).max(5).optional().catch(undefined),
-  minPrice: z.coerce.number().nonnegative().optional().catch(undefined),
-  maxPrice: z.coerce.number().nonnegative().optional().catch(undefined),
+  minPrice: z.coerce
+    .number()
+    .nonnegative()
+    .optional()
+    .catch(HotelUtils.DEFAULT_MIN_PRICE)
+    .default(HotelUtils.DEFAULT_MIN_PRICE),
+  maxPrice: z.coerce
+    .number()
+    .nonnegative()
+    .optional()
+    .catch(HotelUtils.DEFAULT_MAX_PRICE)
+    .default(HotelUtils.DEFAULT_MAX_PRICE),
   services: z.array(z.string().trim()).optional(),
   cancelPolicy: z.nativeEnum(CancelPolicy).optional().catch(undefined),
+  isActive: z.enum(['all', 'true', 'false']).optional().catch('all').default('all'),
 });
 
-export type HotelSearchParams = z.infer<typeof hotelSearchParamsSchema>;
+export type HotelSearchParams = Partial<z.infer<typeof hotelSearchParamsSchema>>;
 
 export interface Hotel extends BaseEntity {
   name: string;
@@ -42,7 +55,7 @@ export interface Hotel extends BaseEntity {
     to: string;
   };
   checkoutTime: Date;
-  images: string[];
+  images: ImageResponse[];
   rating: number;
   services: string[];
   cancelPolicy: CancelPolicy;
@@ -69,6 +82,21 @@ export const createHotelSchema = z.object({
   checkoutTime: z.date({ message: 'Thời gian check-out không được để trống' }),
   rating: z.number({ message: 'Xếp hạng không được để trống' }).int().min(1).max(5),
   cancelPolicy: z.nativeEnum(CancelPolicy, { message: 'Chính sách hủy phòng không được để trống' }),
+  images: z
+    .object({
+      newImages: z.array(
+        z.object({
+          file: z.instanceof(File).nullable(),
+          fileName: z.string().optional(),
+          previewUrl: z.string(),
+        }),
+      ),
+      imagesToDelete: z.array(z.string()),
+    })
+    .refine(
+      ({ newImages, imagesToDelete }) => Math.abs(newImages.length - imagesToDelete.length) > 0,
+      'Ảnh không được để trống',
+    ),
 });
 
 export type CreateHotelSchema = z.infer<typeof createHotelSchema>;

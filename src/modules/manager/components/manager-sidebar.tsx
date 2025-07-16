@@ -10,6 +10,7 @@ import {
 } from '@/base/components/ui/sidebar';
 import { userSchema } from '@/modules/users';
 
+import { ManagerSidebarHomeLink } from './manager-sidebar-home-link';
 import { ManagerSidebarNav } from './manager-sidebar-nav';
 import { ManagerSidebarUserMenu } from './manager-sidebar-user-menu';
 
@@ -36,9 +37,8 @@ export async function ManagerSidebar({ ...props }: React.ComponentProps<typeof S
       </SidebarContent>
 
       <SidebarFooter>
-        <SidebarFooter>
-          <ManagerSidebarUserMenu user={user} />
-        </SidebarFooter>
+        <ManagerSidebarHomeLink />
+        <ManagerSidebarUserMenu user={user} />
       </SidebarFooter>
 
       <SidebarRail />

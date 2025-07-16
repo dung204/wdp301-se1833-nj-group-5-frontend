@@ -1,8 +1,9 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { InfiniteData, UseInfiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query';
 import { Check, ChevronsUpDown, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useInView } from 'react-intersection-observer';
 
 import { Button } from '@/base/components/ui/button';
 import {
@@ -18,6 +19,8 @@ import { useDebounce } from '@/base/hooks';
 import { cn } from '@/base/lib';
 import type { SuccessResponse } from '@/base/types';
 
+import { LoadingIndicator } from './loading-indicator';
+
 export interface Option {
   value: string;
   label: string;
@@ -30,7 +33,7 @@ export type AsyncSelectProps<T> = {
   /** Query key for Tanstack Query, the search term is appended to this key */
   queryKey: (searchTerm: string) => unknown[];
   /** Async function to fetch options */
-  queryFn: (query?: string) => Promise<SuccessResponse<T[]>>;
+  queryFn: (searchTerm: string, page: number) => Promise<SuccessResponse<T[]>>;
   /** Function to render each option */
   renderOption: (option: T) => React.ReactNode;
   /** Function to get the value from an option */
@@ -55,24 +58,40 @@ export type AsyncSelectProps<T> = {
   noResultsMessage?: string;
   /** Allow clearing the selection */
   clearable?: boolean;
-} & (
-  | {
-      /** Allow the select to select multiple values */
-      multiple?: false;
-      /** Currently selected value */
-      value?: string;
-      /** Callback when selection changes */
-      onChange: (value: string) => void;
-    }
-  | {
-      /** Allow the select to select multiple values */
-      multiple: true;
-      /** Currently selected values */
-      value?: string[];
-      /** Callback when selection changes */
-      onChange: (value: string[]) => void;
-    }
-);
+} & Omit<
+  UseInfiniteQueryOptions<
+    SuccessResponse<T[]>,
+    Error,
+    InfiniteData<SuccessResponse<T[]>>,
+    SuccessResponse<T[]>,
+    unknown[],
+    number
+  >,
+  | 'queryKey'
+  | 'queryFn'
+  | 'initialPageParam'
+  | 'getNextPageParam'
+  | 'getPreviousPageParam'
+  | 'initialData'
+> &
+  (
+    | {
+        /** Allow the select to select multiple values */
+        multiple?: false;
+        /** Currently selected value */
+        value?: string;
+        /** Callback when selection changes */
+        onChange: (value: string) => void;
+      }
+    | {
+        /** Allow the select to select multiple values */
+        multiple: true;
+        /** Currently selected values */
+        value?: string[];
+        /** Callback when selection changes */
+        onChange: (value: string[]) => void;
+      }
+  );
 
 export function AsyncSelect<T>({
   queryKey,
@@ -92,7 +111,10 @@ export function AsyncSelect<T>({
   multiple,
   value,
   onChange,
+  enabled,
+  ...useInfiniteQueryOptions
 }: AsyncSelectProps<T>) {
+  const { inView, ref } = useInView();
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
   const [options, setOptions] = useState<T[]>([]);
@@ -128,10 +150,25 @@ export function AsyncSelect<T>({
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
-  const { data: res, isLoading: isLoadingQuery } = useQuery({
+  const {
+    data: res,
+    isLoading: isLoadingQuery,
+    isFetchingNextPage,
+    fetchNextPage,
+  } = useInfiniteQuery({
     queryKey: queryKey(debouncedSearchTerm),
-    queryFn: () => queryFn(debouncedSearchTerm),
-    enabled: !mounted || (mounted && open),
+    queryFn: ({ pageParam }) => queryFn(debouncedSearchTerm, pageParam),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage: SuccessResponse<T[]>) =>
+      lastPage.metadata.pagination.hasNextPage
+        ? lastPage.metadata.pagination.currentPage + 1
+        : undefined,
+    getPreviousPageParam: (firstPage: SuccessResponse<T[]>) =>
+      firstPage.metadata.pagination.hasPreviousPage
+        ? firstPage.metadata.pagination.currentPage - 1
+        : undefined,
+    enabled: enabled || !mounted || (mounted && open),
+    ...useInfiniteQueryOptions,
   });
 
   useEffect(() => {
@@ -141,9 +178,15 @@ export function AsyncSelect<T>({
   useEffect(() => {
     if (!isLoadingQuery) {
       setLoading(false);
-      setOptions(res?.data || []);
+      setOptions(res?.pages.flatMap((p) => p.data) || []);
     }
   }, [res, isLoadingQuery]);
+
+  useEffect(() => {
+    if (inView && !isFetchingNextPage && !loading && res?.pages.length) {
+      fetchNextPage();
+    }
+  }, [inView, isFetchingNextPage, loading, res, fetchNextPage]);
 
   const handleSelect = (currentValue: string) => {
     if (!multiple) {
@@ -216,11 +259,11 @@ export function AsyncSelect<T>({
           <ChevronsUpDown className="opacity-50" size={10} />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className={cn('w-[--radix-popover-trigger-width] p-0', className)}>
+      <PopoverContent className={cn('w-(--radix-popover-trigger-width) p-0', className)}>
         <Command shouldFilter={false}>
           <div className="relative w-full border-b">
             <CommandInput
-              placeholder={`Search ${label.toLowerCase()}...`}
+              placeholder={`Tìm kiếm ${label.toLowerCase()}...`}
               value={searchTerm}
               onValueChange={(value) => {
                 setSearchTerm(value);
@@ -241,7 +284,7 @@ export function AsyncSelect<T>({
               options.length === 0 &&
               (notFound || (
                 <CommandEmpty>
-                  {noResultsMessage ?? `No ${label.toLowerCase()} found.`}
+                  {noResultsMessage ?? `Không tìm thấy ${label.toLowerCase()}`}
                 </CommandEmpty>
               ))}
             {!loading && (
@@ -264,6 +307,9 @@ export function AsyncSelect<T>({
                 ))}
               </CommandGroup>
             )}
+            <div ref={ref} className="flex w-full justify-center">
+              {isFetchingNextPage && <LoadingIndicator className="size-4" />}
+            </div>
           </CommandList>
         </Command>
       </PopoverContent>

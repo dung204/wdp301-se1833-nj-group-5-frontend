@@ -15,7 +15,6 @@ import {
   PhoneCall,
   Plus,
   PlusIcon,
-  SearchIcon,
   Star,
   Trash2,
   User,
@@ -24,11 +23,19 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { ComponentProps, useState } from 'react';
 import { toast } from 'sonner';
+import { z } from 'zod';
 
 import { Pagination } from '@/base/components/layout/pagination';
 import { Badge } from '@/base/components/ui/badge';
 import { Button } from '@/base/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/base/components/ui/card';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from '@/base/components/ui/carousel';
 import {
   Dialog,
   DialogClose,
@@ -43,11 +50,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/base/components/ui/dropdown-menu';
-import { Input } from '@/base/components/ui/input';
+import { Form } from '@/base/components/ui/form';
 import { Label } from '@/base/components/ui/label';
 import { Select } from '@/base/components/ui/select';
 import { Separator } from '@/base/components/ui/separator';
-import { Slider } from '@/base/components/ui/slider';
 import {
   Table,
   TableBody,
@@ -56,7 +62,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/base/components/ui/table';
-import { DateTimeUtils } from '@/base/utils';
+import { DateTimeUtils, StringUtils } from '@/base/utils';
 
 import { HotelForm } from '../components/hotel-form';
 import { useHotelMutations } from '../hooks/use-hotel-mutations';
@@ -74,19 +80,18 @@ import { HotelUtils } from '../utils/hotel.utils';
 type ManagerHotelsPageProps = {
   searchParams: HotelSearchParams;
 };
-const getCancelPolicyLabel = (policy: string) => {
-  switch (policy) {
-    case 'NO_REFUND':
-      return 'Không hoàn tiền';
-    case 'REFUND_BEFORE_1_DAY':
-      return 'Hoàn tiền nếu hủy trước 1 ngày';
-    case 'REFUND_BEFORE_3_DAYS':
-      return 'Hoàn tiền nếu hủy trước 3 ngày';
-    default:
-      return 'Chính sách không xác định';
-  }
-};
+
 type SortColumn = 'name' | 'address' | 'owner' | 'price';
+
+const hotelFilterSchema = z.object({
+  name: z.string().optional(),
+  price: z.tuple([
+    z.coerce.number().min(HotelUtils.DEFAULT_MIN_PRICE),
+    z.coerce.number().max(HotelUtils.DEFAULT_MAX_PRICE),
+  ]),
+  cancelPolicy: z.nativeEnum(CancelPolicy).optional(),
+});
+
 export function ManagerHotelsPage({ searchParams }: ManagerHotelsPageProps) {
   const router = useRouter();
   const [selectedHotel, setSelectedHotel] = useState<Hotel | null>(null);
@@ -97,26 +102,25 @@ export function ManagerHotelsPage({ searchParams }: ManagerHotelsPageProps) {
   const [sortColumn, setSortColumn] = useState<SortColumn | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc' | null>(null);
 
-  // Update query to use searchParams
   const {
     data: {
       data: hotels,
       metadata: { pagination },
     },
   } = useSuspenseQuery({
-    queryKey: ['hotels', 'all', searchParams],
+    queryKey: ['hotels', 'admin', 'all', searchParams],
     queryFn: () => hotelsService.getHotelByAdmin(searchParams),
   });
-  const [name, setName] = useState(searchParams.name ?? '');
-  const [minPrice, setMinPrice] = useState(searchParams.minPrice ?? HotelUtils.DEFAULT_MIN_PRICE);
-  const [maxPrice, setMaxPrice] = useState(searchParams.maxPrice ?? HotelUtils.DEFAULT_MAX_PRICE);
-  const [cancelPolicy, setCancelPolicy] = useState<CancelPolicy | undefined>(
-    searchParams.cancelPolicy,
-  );
-  const handleApplyFilters = () => {
+
+  const handleApplyFilters = (payload: z.infer<typeof hotelFilterSchema>) => {
+    const {
+      name,
+      cancelPolicy,
+      price: [minPrice, maxPrice],
+    } = payload;
     const url = new URL(window.location.href);
 
-    if (name !== '') {
+    if (name) {
       url.searchParams.set('name', name);
     } else {
       url.searchParams.delete('name');
@@ -133,6 +137,19 @@ export function ManagerHotelsPage({ searchParams }: ManagerHotelsPageProps) {
 
     router.push(url.href);
   };
+
+  const handleFilterActive = (value: string | undefined) => {
+    const url = new URL(window.location.href);
+
+    if (value) {
+      url.searchParams.set('isActive', value);
+    } else {
+      url.searchParams.delete('isActive');
+    }
+
+    router.push(url.href);
+  };
+
   const handleSort = (column: SortColumn) => {
     if (sortColumn === column) {
       setSortDirection((prev) => (prev === 'asc' ? 'desc' : prev === 'desc' ? null : 'asc'));
@@ -144,6 +161,7 @@ export function ManagerHotelsPage({ searchParams }: ManagerHotelsPageProps) {
       setSortDirection('asc');
     }
   };
+
   const getSortIcon = (column: SortColumn) => {
     if (sortColumn !== column || !sortDirection) {
       return <ArrowUpDown className="ml-1 h-4 w-4 opacity-50" />;
@@ -153,6 +171,7 @@ export function ManagerHotelsPage({ searchParams }: ManagerHotelsPageProps) {
     }
     return <ArrowDown className="ml-1 h-4 w-4 text-blue-500" />;
   };
+
   const sortedHotels = [...hotels].sort((a, b) => {
     if (!sortColumn || !sortDirection) return 0;
     const dir = sortDirection === 'asc' ? 1 : -1;
@@ -217,94 +236,104 @@ export function ManagerHotelsPage({ searchParams }: ManagerHotelsPageProps) {
       </div>
 
       <Card className="w-full">
-        <CardContent className="">
-          <CardTitle className="mb-6">Bộ lọc tìm kiếm</CardTitle>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-2xl font-bold text-gray-800">
+            <div className="h-6 w-1 rounded-full bg-blue-500"></div>
+            Bộ lọc tìm kiếm
+          </CardTitle>
+        </CardHeader>
 
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-            {/* Search Input */}
-            <div className="space-y-2">
-              <h3 className="font-medium">Tìm kiếm</h3>
-              <div className="relative">
-                <SearchIcon className="absolute top-3 left-3 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Tìm kiếm khách sạn"
-                  className="pl-10"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                />
-              </div>
-            </div>
-
-            {/* Price Range */}
-            <div className="space-y-3">
-              <h3 className="font-medium">Khoảng giá</h3>
-              <Slider
-                value={[minPrice, maxPrice]}
-                step={50000}
-                max={HotelUtils.DEFAULT_MAX_PRICE}
-                onValueChange={(value) => {
-                  setMinPrice(value[0]);
-                  setMaxPrice(value[1]);
-                }}
-                className="w-full"
-              />
-              <div className="flex justify-between text-sm text-gray-500">
-                <span>TỐI THIỂU</span>
-                <span>TỐI ĐA</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Input
-                  value={minPrice.toLocaleString('vi-VN', {
-                    style: 'currency',
-                    currency: 'VND',
-                  })}
-                  className="text-center text-sm"
-                  readOnly
-                />
-                <span className="text-gray-400">-</span>
-                <Input
-                  value={maxPrice.toLocaleString('vi-VN', {
-                    style: 'currency',
-                    currency: 'VND',
-                  })}
-                  className="text-center text-sm"
-                  readOnly
-                />
-              </div>
-            </div>
-
-            {/* Cancel Policy */}
-            <div className="flex flex-col gap-1.5 font-medium">
-              <h3>Chính sách hủy phòng</h3>
-              <Select
-                multiple={false}
-                options={Object.entries(cancelPolicies).map(([value, label]) => ({
+        <CardContent>
+          <Form
+            className="grid grid-cols-1 gap-6 md:grid-cols-3"
+            schema={hotelFilterSchema}
+            defaultValues={{
+              name: searchParams.name,
+              price: [searchParams.minPrice, searchParams.maxPrice],
+              cancelPolicy: searchParams.cancelPolicy,
+            }}
+            fields={[
+              {
+                name: 'name',
+                type: 'text',
+                label: 'Tên khách sạn',
+                className: 'self-baseline',
+                placeholder: 'Nhập tên khách sạn',
+                render: ({ Label, Control }) => (
+                  <>
+                    <Label className="text-base font-semibold text-gray-700" />
+                    <Control />
+                  </>
+                ),
+              },
+              {
+                name: 'price',
+                type: 'slider',
+                label: 'Khoảng giá',
+                className: 'space-y-4',
+                required: false,
+                range: true,
+                min: HotelUtils.DEFAULT_MIN_PRICE,
+                max: HotelUtils.DEFAULT_MAX_PRICE,
+                step: 50_000,
+                numberFormat: (value) => StringUtils.formatCurrency(value.toString()),
+                render: ({ Label, Control }) => (
+                  <>
+                    <Label className="text-base font-semibold text-gray-700" />
+                    <Control />
+                  </>
+                ),
+              },
+              {
+                name: 'cancelPolicy',
+                type: 'select',
+                label: 'Chính sách hủy phòng',
+                className: 'self-baseline',
+                required: false,
+                options: Object.entries(cancelPolicies).map(([value, label]) => ({
                   value,
                   label,
-                }))}
-                placeholder="Chọn chính sách hủy phòng..."
-                searchable={false}
-                clearable
-                value={cancelPolicy}
-                onChange={(value) => setCancelPolicy(value as CancelPolicy)}
-              />
-            </div>
-          </div>
-
-          {/* Apply Button */}
-          <div className="mt-6 flex justify-center">
-            <Button onClick={handleApplyFilters} className="flex items-center gap-2">
-              <FilterIcon className="h-4 w-4" />
-              Áp dụng bộ lọc
-            </Button>
-          </div>
+                })),
+                placeholder: 'Chọn chính sách hủy phòng',
+                searchable: false,
+                clearable: true,
+                render: ({ Label, Control }) => (
+                  <>
+                    <Label className="text-base font-semibold text-gray-700" />
+                    <Control />
+                  </>
+                ),
+              },
+            ]}
+            renderSubmitButton={(Button) => (
+              <div className="col-span-3 flex items-center justify-center">
+                <Button>
+                  <FilterIcon />
+                  Áp dụng bộ lọc
+                </Button>
+              </div>
+            )}
+            onSuccessSubmit={handleApplyFilters}
+          />
         </CardContent>
       </Card>
 
       {/* Table */}
       <Card>
-        <CardHeader>
+        <CardHeader className="flex items-center justify-between">
           <CardTitle>Danh sách khách sạn</CardTitle>
+          <Select
+            triggerClassName="w-48"
+            options={[
+              { value: 'all', label: 'Tất cả' },
+              { value: 'true', label: 'Đang hoạt động' },
+              { value: 'false', label: 'Ngừng hoạt động' },
+            ]}
+            clearable={false}
+            searchable={false}
+            value={searchParams.isActive}
+            onChange={handleFilterActive}
+          />
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -378,7 +407,7 @@ export function ManagerHotelsPage({ searchParams }: ManagerHotelsPageProps) {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center text-gray-600">
-                          {getCancelPolicyLabel(hotel.cancelPolicy)}
+                          {cancelPolicies[hotel.cancelPolicy]}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -444,7 +473,9 @@ export function ManagerHotelsPage({ searchParams }: ManagerHotelsPageProps) {
               </Table>
             )}
           </div>
-          <Pagination pagination={pagination} />
+          <div className="mt-4">
+            <Pagination pagination={pagination} />
+          </div>
         </CardContent>
       </Card>
 
@@ -484,7 +515,7 @@ function AddHotelDialog({ onSuccess, ...props }: AddHotelDialogProps) {
 
   return (
     <Dialog {...props}>
-      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
+      <DialogContent className="max-h-[90vh] max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <PlusIcon />
@@ -493,8 +524,13 @@ function AddHotelDialog({ onSuccess, ...props }: AddHotelDialogProps) {
         </DialogHeader>
 
         <HotelForm
-          onSuccessSubmit={(payload) => triggerCreateHotel(payload as CreateHotelSchema)}
           loading={isPending}
+          defaultValues={{
+            images: {
+              newImages: [],
+              imagesToDelete: [],
+            },
+          }}
           renderSubmitButton={(SubmitButton) => (
             <DialogFooter className="gap-2">
               <DialogClose asChild>
@@ -505,6 +541,7 @@ function AddHotelDialog({ onSuccess, ...props }: AddHotelDialogProps) {
               <SubmitButton>Thêm khách sạn</SubmitButton>
             </DialogFooter>
           )}
+          onSuccessSubmit={(payload) => triggerCreateHotel(payload as CreateHotelSchema)}
         />
       </DialogContent>
     </Dialog>
@@ -528,7 +565,7 @@ function EditHotelDialog({ hotel, onSuccess, ...props }: EditHotelDialogProps) {
 
   return (
     <Dialog {...props}>
-      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
+      <DialogContent className="max-h-[90vh] max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Edit />
@@ -544,6 +581,14 @@ function EditHotelDialog({ hotel, onSuccess, ...props }: EditHotelDialogProps) {
               to: new Date(hotel?.checkinTime.to || ''),
             },
             checkoutTime: new Date(hotel?.checkoutTime || ''),
+            images: {
+              newImages: (hotel?.images || []).map((image) => ({
+                file: null,
+                fileName: image.fileName,
+                previewUrl: image.url,
+              })),
+              imagesToDelete: [],
+            },
           }}
           onSuccessSubmit={(payload) =>
             triggerUpdateHotel({ id: hotel?.id || '', ...(payload as UpdateHotelSchema) })
@@ -591,8 +636,23 @@ function HotelDetailsDialog({ hotel, ...props }: HotelDetailsDialogProps) {
             <div className="space-y-6">
               <div className="space-y-6">
                 <div className="relative h-64 w-full overflow-hidden rounded-xl shadow-lg">
-                  {Array.isArray(hotel.images) && hotel.images[0] ? (
-                    <Image src={hotel.images[0]} alt={hotel.name} fill className="object-cover" />
+                  {hotel.images.length !== 0 ? (
+                    <Carousel className="size-full">
+                      <CarouselContent>
+                        {hotel.images.map((image) => (
+                          <CarouselItem key={crypto.randomUUID()} className="relative h-64">
+                            <Image
+                              src={image.url}
+                              alt={hotel.name}
+                              fill
+                              className="object-cover object-center"
+                            />
+                          </CarouselItem>
+                        ))}
+                      </CarouselContent>
+                      <CarouselNext className="right-2" />
+                      <CarouselPrevious className="left-2" />
+                    </Carousel>
                   ) : (
                     <div className="flex h-full w-full items-center justify-center bg-gray-100 text-gray-400">
                       Không có ảnh
@@ -641,37 +701,35 @@ function HotelDetailsDialog({ hotel, ...props }: HotelDetailsDialogProps) {
 
               <Separator />
               <Card>
-                <CardContent className="p-4">
-                  <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-900">
+                <CardContent className="space-y-4">
+                  <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900">
                     <Clock className="h-5 w-5 text-gray-600" />
                     Giờ hoạt động
                   </h3>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between rounded-lg bg-blue-50 p-3">
-                      <div>
-                        <Label className="text-sm font-medium text-gray-600">Check-in</Label>
-                        <p className="font-semibold text-blue-700">
-                          {DateTimeUtils.formatTime(new Date(hotel.checkinTime.from))} -{' '}
-                          {DateTimeUtils.formatTime(new Date(hotel.checkinTime.to))}
-                        </p>
-                      </div>
-                      <Clock className="h-5 w-5 text-blue-600" />
+                  <div className="flex items-center justify-between rounded-lg bg-blue-50 p-3">
+                    <div>
+                      <Label className="text-sm font-medium text-gray-600">Check-in</Label>
+                      <p className="font-semibold text-blue-700">
+                        {DateTimeUtils.formatTime(new Date(hotel.checkinTime.from))} -{' '}
+                        {DateTimeUtils.formatTime(new Date(hotel.checkinTime.to))}
+                      </p>
                     </div>
-                    <div className="flex items-center justify-between rounded-lg bg-orange-50 p-3">
-                      <div>
-                        <Label className="text-sm font-medium text-gray-600">Check-out</Label>
-                        <p className="font-semibold text-orange-700">
-                          {DateTimeUtils.formatTime(hotel.checkoutTime)}
-                        </p>
-                      </div>
-                      <Clock className="h-5 w-5 text-orange-600" />
+                    <Clock className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div className="flex items-center justify-between rounded-lg bg-orange-50 p-3">
+                    <div>
+                      <Label className="text-sm font-medium text-gray-600">Check-out</Label>
+                      <p className="font-semibold text-orange-700">
+                        {DateTimeUtils.formatTime(hotel.checkoutTime)}
+                      </p>
                     </div>
+                    <Clock className="h-5 w-5 text-orange-600" />
                   </div>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardContent className="p-4">
+                <CardContent>
                   <h3 className="mb-4 text-lg font-semibold text-gray-900">Tiện nghi khách sạn</h3>
                   <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
                     {hotel.services.map((amenity, idx) => (
@@ -688,19 +746,17 @@ function HotelDetailsDialog({ hotel, ...props }: HotelDetailsDialogProps) {
                   <h3 className="mt-6 mb-4 text-lg font-semibold text-gray-900">
                     Chính sách hủy phòng
                   </h3>
-                  <div className="flex items-center">
+                  <div className="flex items-center gap-2">
                     <div className="h-3 w-3 rounded-full bg-red-500"></div>
-                    <span className="text-gray-700">
-                      {getCancelPolicyLabel(hotel.cancelPolicy)}
-                    </span>
+                    <span className="text-gray-700">{cancelPolicies[hotel.cancelPolicy]}</span>
                   </div>
                 </CardContent>
               </Card>
 
               {/* Description */}
               <Card>
-                <CardContent className="p-4">
-                  <h3 className="mb-4 text-lg font-semibold text-gray-900">Mô tả khách sạn</h3>
+                <CardContent className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-900">Mô tả khách sạn</h3>
                   <div className="prose prose-gray max-w-none">
                     <p className="leading-relaxed text-gray-700">
                       {hotel.description || 'Không có mô tả'}

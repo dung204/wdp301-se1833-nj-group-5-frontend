@@ -51,7 +51,7 @@ async function handleFetch(path: string[], req: Request) {
         const {
           data: { data: payload },
         } = await axios.post(
-          '/auth/refresh-token',
+          '/auth/refresh',
           {
             refreshToken,
           },
@@ -62,7 +62,7 @@ async function handleFetch(path: string[], req: Request) {
         refreshToken = payload.refreshToken;
         user = JSON.stringify({
           ...payload.user,
-          displayName: encodeURIComponent(payload.user.displayName),
+          ...(payload.user.fullName && { fullName: encodeURIComponent(payload.user.fullName) }),
         });
         req.headers.set('Authorization', `Bearer ${accessToken}`);
         setNewTokens = true;
@@ -77,19 +77,6 @@ async function handleFetch(path: string[], req: Request) {
     headers: req.headers,
     ...(req.method !== 'GET' && { body: req.body, duplex: 'half' }),
   });
-  const isUpdateUser = req.method === 'PATCH' && fetchUrl.endsWith('/users/profile') && res.ok;
-
-  // If this fetch is updating user profile, update the cookie as well
-  if (isUpdateUser) {
-    if (!setNewTokens) {
-      return new Response(res.body, {
-        headers: {
-          ...Object.fromEntries(Array.from(res.headers.entries())),
-          'Set-Cookie': 'user=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT',
-        },
-      });
-    }
-  }
 
   if (setNewTokens) {
     return new Response(res.body, {

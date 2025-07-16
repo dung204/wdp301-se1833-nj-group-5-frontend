@@ -24,8 +24,7 @@ export function useHotelMutations(options?: {
   });
 
   const updateHotelMutation = useMutation({
-    mutationFn: (data: { id: string } & UpdateHotelSchema) =>
-      hotelsService.updateHotel(data.id, data),
+    mutationFn: (data: { id: string } & UpdateHotelSchema) => hotelsService.updateHotel(data),
     onSuccess: ({ data: hotel }) => {
       toast.success('Cập nhật khách sạn thành công');
       queryClient.invalidateQueries({ queryKey: ['hotels'] });

@@ -17,7 +17,11 @@ export const gender = {
 
 export const userSchema = baseEntitySchema.extend({
   email: z.string().trim(),
-  fullName: z.string().trim().optional(),
+  fullName: z
+    .string()
+    .trim()
+    .transform((val) => decodeURIComponent(val))
+    .optional(),
   role: z.nativeEnum(Role),
   gender: z.nativeEnum(Gender).optional(),
 });
@@ -33,8 +37,14 @@ export const updateRoleUserSchema = z.object({
   role: z.enum(['CUSTOMER', 'HOTEL_OWNER']).optional(), // 👈 Thêm dòng này
 });
 
+export const upgradeRoleSchema = z.object({
+  targetRole: z.literal(Role.HOTEL_OWNER),
+  reason: z.string().optional(),
+});
+
 export type CreateUserSchema = z.infer<typeof createUserSchema>;
 export type UpdateRoleUserSchema = z.infer<typeof updateRoleUserSchema>;
+export type UpgradeRoleSchema = z.infer<typeof upgradeRoleSchema>;
 
 export const updateUserSchema = createUserSchema.partial();
 

@@ -1,11 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
-import {
-  CreateRoomSchema,
-  UpdateRoomSchema,
-  roomService,
-} from '@/modules/manager/services/room.service';
+import { roomsService } from '../services/rooms.service';
+import { CreateRoomSchema, UpdateRoomSchema } from '../types';
 
 export function useRoomMutations(options?: {
   onAddOrUpdateSuccess?: () => void;
@@ -14,7 +11,7 @@ export function useRoomMutations(options?: {
   const queryClient = useQueryClient();
 
   const createRoom = useMutation({
-    mutationFn: (data: CreateRoomSchema) => roomService.createNewRoom(data),
+    mutationFn: (data: CreateRoomSchema) => roomsService.createNewRoom(data),
     onSuccess: () => {
       toast.success('Thêm phòng thành công');
       queryClient.invalidateQueries({ queryKey: ['rooms'] });
@@ -28,8 +25,7 @@ export function useRoomMutations(options?: {
 
   const updateRoom = useMutation({
     mutationFn: (data: { id: string } & UpdateRoomSchema) => {
-      const { id, ...payload } = data;
-      return roomService.updateRoom(id)(payload);
+      return roomsService.updateRoom(data);
     },
     onSuccess: () => {
       toast.success('Cập nhật phòng thành công');
@@ -43,7 +39,7 @@ export function useRoomMutations(options?: {
   });
 
   const deleteRoom = useMutation({
-    mutationFn: (id: string) => roomService.deleteRoom(id),
+    mutationFn: (id: string) => roomsService.deleteRoom(id),
     onSuccess: () => {
       toast.success('Xóa phòng thành công');
       queryClient.invalidateQueries({ queryKey: ['rooms'] });

@@ -21,7 +21,7 @@ export function HotelCard({ hotel }: HotelCardProps) {
           <div className="relative h-48 w-full flex-shrink-0 sm:w-64">
             {hotel?.images && (Array.isArray(hotel.images) ? hotel.images[0] : hotel.images) ? (
               <Image
-                src={Array.isArray(hotel.images) ? hotel.images[0] : hotel.images}
+                src={Array.isArray(hotel.images) ? hotel.images[0].url : hotel.images}
                 alt={hotel.name}
                 fill
                 sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"

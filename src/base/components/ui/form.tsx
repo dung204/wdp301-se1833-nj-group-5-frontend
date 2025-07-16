@@ -42,7 +42,10 @@ import { withProps } from '@/base/utils';
 import { AsyncSelect, AsyncSelectProps } from './async-select';
 import { ImageUploader } from './image-uploader';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from './input-otp';
+import { RangeSlider } from './range-slider';
 import { VideoUploader } from './video-uploader';
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 type FormFieldRenderFn<ControlCompProps> = (comps: {
   /**
@@ -68,6 +71,8 @@ type FormFieldSpec<TFieldValues extends FieldValues = FieldValues> = {
   label?: string;
   description?: string;
   disabled?: boolean;
+  className?: string;
+  required?: boolean;
 } & (
   | {
       type: 'text';
@@ -300,14 +305,11 @@ type FormFieldSpec<TFieldValues extends FieldValues = FieldValues> = {
       type: 'select';
       async: true;
       onChange?: (value: string | string[]) => void;
-      render?: FormFieldRenderFn<
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        Pick<AsyncSelectProps<any>, 'className' | 'triggerClassName'>
-      >;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      render?: FormFieldRenderFn<Pick<AsyncSelectProps<any>, 'className' | 'triggerClassName'>>;
     } & Omit<AsyncSelectProps<any>, 'value' | 'onChange'>)
   | {
       type: 'slider';
+      range?: false;
       step?: number;
       /**
        * A custom render function for the form field.
@@ -326,6 +328,26 @@ type FormFieldSpec<TFieldValues extends FieldValues = FieldValues> = {
        */
       render?: FormFieldRenderFn<React.ComponentProps<typeof Slider>>;
     }
+  | ({
+      type: 'slider';
+      range: true;
+      /**
+       * A custom render function for the form field.
+       *
+       * @default
+       * ```tsx
+       * ({ Control, Label, Description, Message }) => (
+       *   <>
+       *     <Label />
+       *     <Control />
+       *     <Description />
+       *     <Message />
+       *   </>
+       * )
+       * ```
+       */
+      render?: FormFieldRenderFn<unknown>;
+    } & Omit<React.ComponentProps<typeof RangeSlider>, 'value' | 'onChange'>)
   | {
       type: 'switch';
       /**
@@ -383,10 +405,9 @@ type FormFieldSpec<TFieldValues extends FieldValues = FieldValues> = {
 );
 
 interface FormProps<TFieldValues extends FieldValues, TTransformedValues> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   schema: z.ZodSchema<TTransformedValues, any, TFieldValues>;
   fields: FormFieldSpec<TFieldValues>[];
-  onSuccessSubmit: SubmitHandler<TTransformedValues>;
+  onSuccessSubmit?: SubmitHandler<TTransformedValues>;
   onErrorSubmit?: SubmitErrorHandler<TFieldValues>;
   defaultValues?: DefaultValues<TFieldValues>;
   renderSubmitButton?: (
@@ -396,7 +417,6 @@ interface FormProps<TFieldValues extends FieldValues, TTransformedValues> {
   ) => React.ReactNode;
   i18nNamespace?: Parameters<typeof useTranslations>[0];
   className?: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ref?: React.Ref<UseFormReturn<TFieldValues, any, TTransformedValues>>;
   loading?: boolean;
 }
@@ -408,7 +428,7 @@ function Form<TFieldValues extends FieldValues, TTransformedValues>({
   ref,
   defaultValues,
   i18nNamespace,
-  onSuccessSubmit,
+  onSuccessSubmit = () => {},
   onErrorSubmit,
   renderSubmitButton,
   loading,
@@ -431,7 +451,6 @@ function Form<TFieldValues extends FieldValues, TTransformedValues>({
       >
         {fields.map((formField) => {
           const Label = FormLabel;
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const Control = getFormControl(formField) as any;
           const Description = FormDescription;
           const Message = FormMessage;
@@ -441,29 +460,30 @@ function Form<TFieldValues extends FieldValues, TTransformedValues>({
 
           return (
             <FormField key={formField.name} name={formField.name}>
-              <FormItem i18nNamespace={i18nNamespace}>
+              <FormItem i18nNamespace={i18nNamespace} className={formField.className}>
                 {!formField.render ? (
                   <>
-                    <Label required={isFieldRequired}>{formField.label}</Label>
+                    <Label required={formField.required ?? isFieldRequired}>
+                      {formField.label}
+                    </Label>
                     <Control formField={formField} disabled={loading || formField.disabled} />
 
-                    {(t.has(`fields.${formField.name}.description` as Parameters<typeof t>[0]) ||
+                    {(t.has(`fields.${formField.name}.description` as any) ||
                       formField.description) && <Description>{formField.description}</Description>}
                     <Message />
                   </>
                 ) : (
                   formField.render({
                     Label: withProps(Label, {
-                      required: isFieldRequired,
+                      required: formField.required ?? isFieldRequired,
                       children: formField.label,
                     }),
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     Control: withProps(Control as any, {
                       formField,
                       disabled: loading || formField.disabled,
                     }),
                     Description: (props) =>
-                      t.has(`fields.${formField.name}.description` as Parameters<typeof t>[0]) ||
+                      t.has(`fields.${formField.name}.description` as any) ||
                       formField.description ? (
                         <Description {...props}>{formField.description}</Description>
                       ) : (
@@ -531,6 +551,10 @@ function getFormControl(formField: FormFieldSpec) {
       return SelectFormControl;
 
     case 'slider':
+      if (formField.range) {
+        return RangeSliderFormControl;
+      }
+
       return SliderFormControl;
 
     case 'switch':
@@ -561,10 +585,7 @@ function TextFormControl({
   return (
     <FormControl>
       <Input
-        placeholder={
-          formField.placeholder ??
-          t(`fields.${formField.name}.placeholder` as Parameters<typeof t>[0])
-        }
+        placeholder={formField.placeholder ?? t(`fields.${formField.name}.placeholder` as any)}
         {...form.register(formField.name)}
         {...props}
       />
@@ -585,10 +606,7 @@ function PasswordFormControl({
   return (
     <FormControl>
       <PasswordInput
-        placeholder={
-          formField.placeholder ??
-          t(`fields.${formField.name}.placeholder` as Parameters<typeof t>[0])
-        }
+        placeholder={formField.placeholder ?? t(`fields.${formField.name}.placeholder` as any)}
         {...form.register(formField.name)}
         {...props}
       />
@@ -609,10 +627,7 @@ function TextareaFormControl({
   return (
     <FormControl>
       <Textarea
-        placeholder={
-          formField.placeholder ??
-          t(`fields.${formField.name}.placeholder` as Parameters<typeof t>[0])
-        }
+        placeholder={formField.placeholder ?? t(`fields.${formField.name}.placeholder` as any)}
         {...form.register(formField.name)}
         {...props}
       />
@@ -668,10 +683,7 @@ function DateRangeFormControl({
           })
         }
         disabled={formField.disabled}
-        placeholder={
-          formField.placeholder ??
-          t(`fields.${formField.name}.placeholder` as Parameters<typeof t>[0])
-        }
+        placeholder={formField.placeholder ?? t(`fields.${formField.name}.placeholder` as any)}
         triggerClassName={cn(
           { 'ring-danger/20! dark:ring-danger/40! border-danger!': !!error },
           triggerClassName,
@@ -705,10 +717,7 @@ function DateFormControl({
           })
         }
         disabled={formField.disabled}
-        placeholder={
-          formField.placeholder ??
-          t(`fields.${formField.name}.placeholder` as Parameters<typeof t>[0])
-        }
+        placeholder={formField.placeholder ?? t(`fields.${formField.name}.placeholder` as any)}
         triggerClassName={cn(
           { 'ring-danger/20! dark:ring-danger/40! border-danger!': !!error },
           triggerClassName,
@@ -742,10 +751,7 @@ function TimeRangeFormControl({
         dateRange={dateRange}
         onDateRangeChange={onChange}
         disabled={formField.disabled}
-        placeholder={
-          formField.placeholder ??
-          t(`fields.${formField.name}.placeholder` as Parameters<typeof t>[0])
-        }
+        placeholder={formField.placeholder ?? t(`fields.${formField.name}.placeholder` as any)}
         triggerClassName={cn(
           { 'ring-danger/20! dark:ring-danger/40! border-danger!': !!error },
           triggerClassName,
@@ -779,10 +785,7 @@ function TimeFormControl({
         date={date}
         onDateChange={onChange}
         disabled={formField.disabled}
-        placeholder={
-          formField.placeholder ??
-          t(`fields.${formField.name}.placeholder` as Parameters<typeof t>[0])
-        }
+        placeholder={formField.placeholder ?? t(`fields.${formField.name}.placeholder` as any)}
         triggerClassName={cn(
           { 'ring-danger/20! dark:ring-danger/40! border-danger!': !!error },
           triggerClassName,
@@ -816,10 +819,7 @@ function DateTimeRangeFormControl({
           })
         }
         disabled={formField.disabled}
-        placeholder={
-          formField.placeholder ??
-          t(`fields.${formField.name}.placeholder` as Parameters<typeof t>[0])
-        }
+        placeholder={formField.placeholder ?? t(`fields.${formField.name}.placeholder` as any)}
         triggerClassName={cn(
           { 'ring-danger/20! dark:ring-danger/40! border-danger!': !!error },
           triggerClassName,
@@ -853,10 +853,7 @@ function DateTimeFormControl({
           })
         }
         disabled={formField.disabled}
-        placeholder={
-          formField.placeholder ??
-          t(`fields.${formField.name}.placeholder` as Parameters<typeof t>[0])
-        }
+        placeholder={formField.placeholder ?? t(`fields.${formField.name}.placeholder` as any)}
         triggerClassName={cn(
           { 'ring-danger/20! dark:ring-danger/40! border-danger!': !!error },
           triggerClassName,
@@ -890,10 +887,7 @@ function AsyncSelectFormControl({
         });
         formField.onChange?.(value);
       }}
-      placeholder={
-        formField.placeholder ??
-        t(`fields.${formField.name}.placeholder` as Parameters<typeof t>[0])
-      }
+      placeholder={formField.placeholder ?? t(`fields.${formField.name}.placeholder` as any)}
       triggerClassName={cn(
         {
           'ring-danger/20! dark:ring-danger/40! border-danger!': !!error,
@@ -917,6 +911,7 @@ function SelectFormControl({
   const t = useTranslations(i18nNamespace);
 
   return (
+    // @ts-expect-error multiple is indeed optional in Select
     <Select
       {...formField}
       value={form.getValues(formField.name)}
@@ -927,10 +922,7 @@ function SelectFormControl({
           shouldValidate: true,
         })
       }
-      placeholder={
-        formField.placeholder ??
-        t(`fields.${formField.name}.placeholder` as Parameters<typeof t>[0])
-      }
+      placeholder={formField.placeholder ?? t(`fields.${formField.name}.placeholder` as any)}
       triggerClassName={cn(
         {
           'ring-danger/20! dark:ring-danger/40! border-danger!': !!error,
@@ -939,6 +931,27 @@ function SelectFormControl({
       )}
       {...props}
     />
+  );
+}
+
+function RangeSliderFormControl({
+  formField,
+  ...props
+}: React.ComponentProps<typeof RangeSlider> & {
+  formField: Extract<FormFieldSpec, { type: 'slider'; range: true }>;
+}) {
+  const form = useFormContext();
+  const {
+    field: { value, onChange },
+  } = useController({
+    control: form.control,
+    name: formField.name,
+  });
+
+  return (
+    <FormControl>
+      <RangeSlider {...formField} value={value} onChange={onChange} {...props} />
+    </FormControl>
   );
 }
 
@@ -1056,13 +1069,23 @@ function ImageFormControl({
 }) {
   const form = useFormContext();
   const {
-    field: { value: images, onChange },
+    field: { value, onChange },
   } = useController({
     control: form.control,
     name: formField.name,
   });
 
-  return <ImageUploader className={className} images={images} onImagesChange={onChange} />;
+  return (
+    <ImageUploader
+      className={className}
+      images={value.newImages}
+      onImagesChange={(images) => onChange({ ...value, newImages: images })}
+      fileNamesToDelete={value.imagesToDelete}
+      onFileNamesToDeleteChange={(fileNamesToDelete) =>
+        onChange({ ...value, imagesToDelete: fileNamesToDelete })
+      }
+    />
+  );
 }
 
 function VideoFormControl({
@@ -1102,40 +1125,40 @@ function RatingFormControl({
     <div className="flex">
       <Star
         onClick={() => onChange(1)}
-        className={cn('stroke-muted fill-muted hover:fill-yellow-400', {
-          'fill-yellow-400 stroke-yellow-400 text-yellow-400': value >= 1 || hoverValue >= 1,
+        className={cn('fill-muted stroke-black hover:fill-yellow-400', {
+          'fill-yellow-400 text-yellow-400': value >= 1 || hoverValue >= 1,
         })}
         onMouseOver={() => setHoverValue(1)}
         onMouseOut={() => setHoverValue(0)}
       />
       <Star
         onClick={() => onChange(2)}
-        className={cn('stroke-muted fill-muted hover:fill-yellow-400', {
-          'fill-yellow-400 stroke-yellow-400 text-yellow-400': value >= 2 || hoverValue >= 2,
+        className={cn('fill-muted stroke-black hover:fill-yellow-400', {
+          'fill-yellow-400 text-yellow-400': value >= 2 || hoverValue >= 2,
         })}
         onMouseOver={() => setHoverValue(2)}
         onMouseOut={() => setHoverValue(0)}
       />
       <Star
         onClick={() => onChange(3)}
-        className={cn('stroke-muted fill-muted hover:fill-yellow-400', {
-          'fill-yellow-400 stroke-yellow-400 text-yellow-400': value >= 3 || hoverValue >= 3,
+        className={cn('fill-muted stroke-black hover:fill-yellow-400', {
+          'fill-yellow-400 text-yellow-400': value >= 3 || hoverValue >= 3,
         })}
         onMouseOver={() => setHoverValue(3)}
         onMouseOut={() => setHoverValue(0)}
       />
       <Star
         onClick={() => onChange(4)}
-        className={cn('stroke-muted fill-muted hover:fill-yellow-400', {
-          'fill-yellow-400 stroke-yellow-400 text-yellow-400': value >= 4 || hoverValue >= 4,
+        className={cn('fill-muted stroke-black hover:fill-yellow-400', {
+          'fill-yellow-400 text-yellow-400': value >= 4 || hoverValue >= 4,
         })}
         onMouseOver={() => setHoverValue(4)}
         onMouseOut={() => setHoverValue(0)}
       />
       <Star
         onClick={() => onChange(5)}
-        className={cn('stroke-muted fill-muted hover:fill-yellow-400', {
-          'fill-yellow-400 stroke-yellow-400 text-yellow-400': value >= 5 || hoverValue >= 5,
+        className={cn('fill-muted stroke-black hover:fill-yellow-400', {
+          'fill-yellow-400 text-yellow-400': value >= 5 || hoverValue >= 5,
         })}
         onMouseOver={() => setHoverValue(5)}
         onMouseOut={() => setHoverValue(0)}
@@ -1267,7 +1290,7 @@ function FormLabel({
       htmlFor={formItemId}
       {...props}
     >
-      {children ?? t(`fields.${name}.label` as Parameters<typeof t>[0])}
+      {children ?? t(`fields.${name}.label` as any)}
       {required && (
         <span className="text-danger" aria-hidden>
           *
@@ -1302,7 +1325,7 @@ function FormDescription({ className, children, ...props }: React.ComponentProps
       className={cn('text-muted-foreground text-sm', className)}
       {...props}
     >
-      {children ?? t(`fields.${name}.description` as Parameters<typeof t>[0])}
+      {children ?? t(`fields.${name}.description` as any)}
     </p>
   );
 }
@@ -1312,8 +1335,8 @@ function FormMessage({ className, ...props }: React.ComponentProps<'p'>) {
   const t = useTranslations(i18nNamespace);
 
   const body = error
-    ? t.has(`fields.${name}.errors.${error.type}` as Parameters<typeof t>[0])
-      ? t(`fields.${name}.errors.${error.type}` as Parameters<typeof t>[0])
+    ? t.has(`fields.${name}.errors.${error.type}` as any)
+      ? t(`fields.${name}.errors.${error.type}` as any)
       : error.message
     : props.children;
 

@@ -81,6 +81,18 @@ export function HotelForm(props: HotelFormProps) {
           label: 'Mô tả',
           placeholder: 'Nhập mô tả về khách sạn',
         },
+        {
+          name: 'images',
+          type: 'image',
+          label: 'Ảnh khách sạn',
+          render: ({ Label, Control, Message }) => (
+            <>
+              <Label />
+              <Control />
+              <Message />
+            </>
+          ),
+        },
       ]}
       {...props}
     />

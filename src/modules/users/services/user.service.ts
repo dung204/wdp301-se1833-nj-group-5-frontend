@@ -1,7 +1,15 @@
+import axios from 'axios';
+
 import { HttpClient } from '@/base/lib';
 import { CommonSearchParams, SuccessResponse } from '@/base/types';
 
-import { CreateUserSchema, UpdateRoleUserSchema, UpdateUserSchema, User } from '../types';
+import {
+  CreateUserSchema,
+  UpdateRoleUserSchema,
+  UpdateUserSchema,
+  UpgradeRoleSchema,
+  User,
+} from '../types';
 
 class UserService extends HttpClient {
   constructor() {
@@ -14,10 +22,14 @@ class UserService extends HttpClient {
     });
   }
 
-  public updateUserProfile(payload: UpdateUserSchema) {
-    return this.patch<SuccessResponse<User>>(`/users/profile`, payload, {
+  public async updateUserProfile(payload: UpdateUserSchema) {
+    const res = await this.patch<SuccessResponse<User>>(`/users/profile`, payload, {
       isPrivateRoute: true,
     });
+
+    await axios.post('/api/auth/set-user', res.data);
+
+    return res;
   }
 
   public getAllUsers(params?: CommonSearchParams) {
@@ -63,6 +75,12 @@ class UserService extends HttpClient {
         isPrivateRoute: true,
       },
     );
+  }
+
+  public upgradeRole(payload: UpgradeRoleSchema) {
+    return this.patch<SuccessResponse<User>>('/users/upgrade-role', payload, {
+      isPrivateRoute: true,
+    });
   }
 }
 
