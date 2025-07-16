@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 
-import { RoomsPage } from '@/modules/hotels/pages/rooms.page';
+import { HotelDetailsPage } from '@/modules/hotels/pages/hotel-details.page';
 import { roomSearchParamsSchema } from '@/modules/rooms';
 
 type PageProps = {
@@ -17,7 +17,7 @@ export default async function Page({ searchParams, params }: PageProps) {
     <Suspense
     //  fallback={<HotelsPageSkeleton />}
     >
-      <RoomsPage
+      <HotelDetailsPage
         key={JSON.stringify(validatedSearchParams)}
         searchParams={validatedSearchParams}
         hotelId={hotelId}

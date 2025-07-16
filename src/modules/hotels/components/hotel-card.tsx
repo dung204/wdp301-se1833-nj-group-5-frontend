@@ -1,24 +1,44 @@
+'use client';
+
+import { format } from 'date-fns';
 import { HeartIcon, MapPinIcon, StarIcon } from 'lucide-react';
 import Image from 'next/image';
-import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 import { Button } from '@/base/components/ui/button';
 import { Card, CardContent } from '@/base/components/ui/card';
 import { Skeleton } from '@/base/components/ui/skeleton';
 
-import { Hotel } from '../types';
+import { Hotel, hotelSearchParamsSchema } from '../types';
 
 type HotelCardProps = {
   hotel: Hotel;
 };
 
 export function HotelCard({ hotel }: HotelCardProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { checkIn, checkOut, minOccupancy, rooms } = hotelSearchParamsSchema
+    .pick({ checkIn: true, checkOut: true, minOccupancy: true, rooms: true })
+    .parse(Object.fromEntries(searchParams.entries()));
+
+  const navigateToHotelDetails = () => {
+    const url = new URL(`/hotels/${hotel.id}`, window.location.origin);
+
+    url.searchParams.set('checkIn', format(checkIn, 'yyyy-MM-dd'));
+    url.searchParams.set('checkOut', format(checkOut, 'yyyy-MM-dd'));
+    url.searchParams.set('minOccupancy', minOccupancy.toString());
+    url.searchParams.set('rooms', rooms.toString());
+
+    router.push(url.href);
+  };
+
   return (
-    <Card className="overflow-hidden transition-shadow duration-300 hover:shadow-lg">
+    <Card className="overflow-hidden p-0 transition-shadow duration-300 hover:shadow-lg">
       <CardContent className="p-0">
         <div className="flex flex-col sm:flex-row">
           {/* Left side - Image */}
-          <div className="relative h-48 w-full flex-shrink-0 sm:w-64">
+          <div className="relative w-full flex-shrink-0 sm:w-64">
             {hotel?.images && (Array.isArray(hotel.images) ? hotel.images[0] : hotel.images) ? (
               <Image
                 src={Array.isArray(hotel.images) ? hotel.images[0].url : hotel.images}
@@ -46,10 +66,10 @@ export function HotelCard({ hotel }: HotelCardProps) {
             <div className="flex flex-col gap-4 lg:flex-row lg:justify-between">
               {/* Hotel details */}
               <div className="space-y-2">
-                <h3 className="text-lg font-semibold text-gray-900">{hotel.name}</h3>
+                <h3 className="line-clamp-1 text-lg font-semibold text-gray-900">{hotel.name}</h3>
                 <div className="flex items-center text-gray-600">
                   <MapPinIcon className="mr-1 h-4 w-4 flex-shrink-0" />
-                  <span className="text-sm">{hotel.address}</span>
+                  <span className="line-clamp-1 text-sm">{hotel.address}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-lg font-bold text-blue-600">{hotel.rating.toFixed(1)}</span>
@@ -69,7 +89,7 @@ export function HotelCard({ hotel }: HotelCardProps) {
                     ))}
                   </div>
                 </div>
-                <p className="line-clamp-2 text-sm text-gray-600">{hotel.description}</p>
+                <p className="line-clamp-2 h-[2lh] text-sm text-gray-600">{hotel.description}</p>
               </div>
 
               {/* Check-in/out times */}
@@ -81,12 +101,11 @@ export function HotelCard({ hotel }: HotelCardProps) {
                       hour: '2-digit',
                       minute: '2-digit',
                     })}
-                    h -
+                    -
                     {new Date(hotel.checkinTime.to).toLocaleTimeString('vi-VN', {
                       hour: '2-digit',
                       minute: '2-digit',
                     })}
-                    h
                   </span>
                 </div>
                 <div className="flex items-center">
@@ -96,30 +115,31 @@ export function HotelCard({ hotel }: HotelCardProps) {
                       hour: '2-digit',
                       minute: '2-digit',
                     })}
-                    h
                   </span>
                 </div>
               </div>
             </div>
 
             {/* Services */}
-            {hotel.services && hotel.services.length > 0 && (
-              <div className="mt-4">
-                <div className="flex flex-wrap items-center gap-1">
-                  <span className="text-sm font-medium text-gray-700">Dịch vụ:</span>
-                  <div className="flex flex-wrap gap-1">
-                    {hotel.services.map((item, index) => (
-                      <span
-                        key={index}
-                        className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-xs text-blue-700"
-                      >
-                        {item}
-                      </span>
-                    ))}
-                  </div>
-                </div>
+            <div className="mt-4">
+              <div className="flex h-[1lh] flex-wrap items-center gap-1 text-sm">
+                {hotel.services && hotel.services.length > 0 && (
+                  <>
+                    <span className="text-sm font-medium text-gray-700">Dịch vụ:</span>
+                    <div className="flex flex-wrap gap-1">
+                      {hotel.services.map((item, index) => (
+                        <span
+                          key={index}
+                          className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-xs text-blue-700"
+                        >
+                          {item}
+                        </span>
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
-            )}
+            </div>
 
             {/* Actions */}
             <div className="mt-auto flex items-center justify-between pt-4">
@@ -141,11 +161,13 @@ export function HotelCard({ hotel }: HotelCardProps) {
                   <span className="hidden sm:inline">Thêm vào yêu thích</span>
                   <span className="inline sm:hidden">Yêu thích</span>
                 </Button>
-                <Link href={`/hotels/${hotel.id}`}>
-                  <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
-                    Xem chi tiết
-                  </Button>
-                </Link>
+                <Button
+                  size="sm"
+                  className="bg-blue-600 hover:bg-blue-700"
+                  onClick={() => navigateToHotelDetails()}
+                >
+                  Xem chi tiết
+                </Button>
               </div>
             </div>
           </div>

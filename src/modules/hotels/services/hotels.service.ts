@@ -1,7 +1,13 @@
 import { HttpClient } from '@/base/lib';
 import { SuccessResponse } from '@/base/types';
 
-import { CreateHotelSchema, Hotel, HotelSearchParams, UpdateHotelSchema } from '../types';
+import {
+  CreateHotelSchema,
+  Hotel,
+  HotelSearchParams,
+  ManagerHotelSearchParams,
+  UpdateHotelSchema,
+} from '../types';
 
 class HotelsService extends HttpClient {
   constructor() {
@@ -17,7 +23,7 @@ class HotelsService extends HttpClient {
     return this.get<SuccessResponse<Hotel>>(`/hotels/${id}`);
   }
 
-  public getHotelByAdmin(params?: HotelSearchParams) {
+  public getHotelByAdmin(params?: ManagerHotelSearchParams) {
     return this.get<SuccessResponse<Hotel[]>>(`/hotels/admin`, {
       params,
       isPrivateRoute: true,

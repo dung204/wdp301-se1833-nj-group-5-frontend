@@ -8,7 +8,7 @@ class RoomsService extends HttpClient {
     super();
   }
 
-  public getAllRooms(params?: RoomSearchParams) {
+  public getAllRooms(params?: Partial<RoomSearchParams>) {
     return this.get<SuccessResponse<Room[]>>('/rooms', {
       params,
     });

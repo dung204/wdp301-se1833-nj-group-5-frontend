@@ -1,14 +1,18 @@
 import { z } from 'zod';
 
-import { BaseEntity, commonSearchParamsSchema } from '@/base/types';
+import { baseEntitySchema, commonSearchParamsSchema } from '@/base/types';
 
-import { Hotel } from '../hotels';
-import { ImageResponse } from '../media';
+import { hotelSchema } from '../hotels';
+import { imageResponseSchema } from '../media';
 import { RoomUtils } from './utils/room.utils';
 
 export const roomSearchParamsSchema = commonSearchParamsSchema.extend({
+  id: z.string().optional(),
   name: z.string().optional(),
   hotel: z.string().trim().optional(),
+  checkIn: z.string().optional(),
+  checkOut: z.string().optional(),
+  minOccupancy: z.coerce.number().int().min(1).catch(2).default(2),
   minPrice: z.coerce
     .number()
     .nonnegative()
@@ -28,23 +32,25 @@ export const roomSearchParamsSchema = commonSearchParamsSchema.extend({
 
 export type RoomSearchParams = z.infer<typeof roomSearchParamsSchema>;
 
-export interface Room extends BaseEntity {
-  name: string;
-  hotel: Hotel;
-  rate: number;
-  size: number;
-  occupancy: number;
-  services: string[];
-  images: ImageResponse[];
-  maxQuantity: number;
-  isActive: boolean;
-  availability: {
-    total: string;
-    booked: string;
-    available: string;
-  };
-  isSoldOut: boolean;
-}
+export const roomSchema = baseEntitySchema.extend({
+  name: z.string(),
+  hotel: hotelSchema,
+  rate: z.number(),
+  size: z.number(),
+  occupancy: z.number(),
+  services: z.array(z.string()),
+  images: z.array(imageResponseSchema),
+  maxQuantity: z.number(),
+  isActive: z.boolean(),
+  availability: z.object({
+    total: z.number(),
+    booked: z.number(),
+    available: z.number(),
+  }),
+  isSoldOut: z.boolean(),
+});
+
+export type Room = z.infer<typeof roomSchema>;
 
 export const createRoomSchema = z.object({
   name: z.string().trim().nonempty('Tên phòng không được để trống'),
