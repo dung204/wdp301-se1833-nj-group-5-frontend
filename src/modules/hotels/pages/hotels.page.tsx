@@ -14,6 +14,7 @@ import { Select } from '@/base/components/ui/select';
 import { Slider } from '@/base/components/ui/slider';
 
 import { HotelCard, HotelCardSkeleton } from '../components/hotel-card';
+import { HotelSearchBoxSmall } from '../components/hotel-search-box';
 import { hotelsService } from '../services/hotels.service';
 import { CancelPolicy, HotelSearchParams, cancelPolicies } from '../types';
 import { HotelUtils } from '../utils/hotel.utils';
@@ -64,7 +65,8 @@ export function HotelsPage({ searchParams }: HotelsPageProps) {
 
   return (
     <div className="flex-1">
-      <div className="container mx-auto px-4 py-6">
+      <HotelSearchBoxSmall />
+      <div className="mx-auto max-w-7xl px-4 py-6">
         <div className="flex gap-6">
           {/* FilterFilter */}
           <div className="w-80 flex-shrink-0">

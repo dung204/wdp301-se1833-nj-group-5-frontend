@@ -1,9 +1,10 @@
+import { addDays, format } from 'date-fns';
 import { z } from 'zod';
 
-import { BaseEntity, commonSearchParamsSchema } from '@/base/types';
+import { baseEntitySchema, commonSearchParamsSchema } from '@/base/types';
 
-import { ImageResponse } from '../media';
-import { User } from '../users';
+import { imageResponseSchema } from '../media';
+import { userSchema } from '../users';
 import { HotelUtils } from './utils/hotel.utils';
 
 export enum CancelPolicy {
@@ -18,7 +19,7 @@ export const cancelPolicies = {
   [CancelPolicy.REFUND_BEFORE_3_DAYS]: 'Hoàn phí trước 3 ngày',
 } as const;
 
-export const hotelSearchParamsSchema = commonSearchParamsSchema.extend({
+export const managerHotelSearchParamsSchema = commonSearchParamsSchema.extend({
   id: z.string().trim().optional(),
   name: z.string().trim().optional(),
   address: z.string().trim().optional(),
@@ -41,25 +42,49 @@ export const hotelSearchParamsSchema = commonSearchParamsSchema.extend({
   isActive: z.enum(['all', 'true', 'false']).optional().catch('all').default('all'),
 });
 
+export type ManagerHotelSearchParams = Partial<z.infer<typeof managerHotelSearchParamsSchema>>;
+
+export const hotelSearchParamsSchema = managerHotelSearchParamsSchema.extend({
+  searchTerm: z.string().optional().catch('').default(''),
+  checkIn: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional()
+    .catch(format(new Date(), 'yyyy-MM-dd'))
+    .default(format(new Date(), 'yyyy-MM-dd'))
+    .transform((value) => new Date(value)),
+  checkOut: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional()
+    .catch(format(addDays(new Date(), 1), 'yyyy-MM-dd'))
+    .default(format(addDays(new Date(), 1), 'yyyy-MM-dd'))
+    .transform((value) => new Date(value)),
+  rooms: z.coerce.number().int().min(1).optional().catch(1).default(1),
+  minOccupancy: z.coerce.number().int().min(1).catch(2).default(2),
+});
+
 export type HotelSearchParams = Partial<z.infer<typeof hotelSearchParamsSchema>>;
 
-export interface Hotel extends BaseEntity {
-  name: string;
-  address: string;
-  description: string;
-  owner: User;
-  phoneNumber: string;
-  priceHotel: number;
-  checkinTime: {
-    from: string;
-    to: string;
-  };
-  checkoutTime: Date;
-  images: ImageResponse[];
-  rating: number;
-  services: string[];
-  cancelPolicy: CancelPolicy;
-}
+export const hotelSchema = baseEntitySchema.extend({
+  name: z.string(),
+  address: z.string(),
+  description: z.string(),
+  owner: userSchema,
+  phoneNumber: z.string(),
+  priceHotel: z.number(),
+  checkinTime: z.object({
+    from: z.string(),
+    to: z.string(),
+  }),
+  checkoutTime: z.string(),
+  images: z.array(imageResponseSchema),
+  rating: z.number(),
+  services: z.array(z.string()),
+  cancelPolicy: z.nativeEnum(CancelPolicy),
+});
+
+export type Hotel = z.infer<typeof hotelSchema>;
 
 export const createHotelSchema = z.object({
   name: z.string().trim().nonempty('Tên khách sạn không được để trống'),

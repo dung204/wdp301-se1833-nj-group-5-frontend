@@ -2,14 +2,14 @@ import { AsyncSelectProps } from '@/base/components/ui/async-select';
 import { CommonSearchParams } from '@/base/types';
 
 import { hotelsService } from '../services/hotels.service';
-import { Hotel, HotelSearchParams } from '../types';
+import { Hotel, ManagerHotelSearchParams } from '../types';
 
 export class HotelUtils {
   static DEFAULT_MIN_PRICE = 0;
   static DEFAULT_MAX_PRICE = 5_000_000;
 
   static getHotelsByAdminAsyncSelectOptions(
-    searchBy: Exclude<keyof HotelSearchParams, keyof CommonSearchParams | 'sorting'>,
+    searchBy: Exclude<keyof ManagerHotelSearchParams, keyof CommonSearchParams | 'sorting'>,
   ): Omit<AsyncSelectProps<Hotel>, 'value' | 'onChange'> {
     return {
       // eslint-disable-next-line @tanstack/query/exhaustive-deps

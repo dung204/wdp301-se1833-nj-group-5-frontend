@@ -81,7 +81,9 @@ export async function middleware(request: NextRequest) {
     } catch (_refreshTokenError) {
       // When refresh token is invalid, delete cookies & redirect to login page if the route is private
       if (isPrivateRoute || isManagerRoute) {
-        redirectUrl.pathname = '/';
+        redirectUrl.pathname = '/auth/login';
+        redirectUrl.search = '';
+        redirectUrl.searchParams.set('redirect', request.nextUrl.href);
         return deleteCookieAndRedirect(redirectUrl);
       }
 

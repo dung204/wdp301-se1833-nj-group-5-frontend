@@ -1,6 +1,6 @@
 import { Metadata } from 'next';
 
-import { HotelSearchBox } from '@/modules/users/components/search-box';
+import { HotelSearchBox } from '@/modules/hotels';
 import { Destination } from '@/modules/users/pages/home/destinations/page';
 import { Discount } from '@/modules/users/pages/home/discount/page';
 import { Famous } from '@/modules/users/pages/home/famous/page';
@@ -14,7 +14,7 @@ export default function UserHomePage() {
     <div>
       <HotelSearchBox />
       <div className="flex justify-center px-16">
-        <div className="w-full max-w-[1200px]">
+        <div className="w-full max-w-7xl">
           <Destination />
           <Discount />
           <Famous />

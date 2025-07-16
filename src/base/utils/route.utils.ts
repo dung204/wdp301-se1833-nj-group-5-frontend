@@ -1,7 +1,7 @@
 import { pathToRegexp } from 'path-to-regexp';
 
 export class RouteUtils {
-  private static privateRoutes = ['/favourites', '/profile'];
+  private static privateRoutes = ['/favourites', '/profile', '/book/*path'];
   private static managerRoutes = ['/manager/*path'];
   private static authRoutes = ['/auth/*path'];
 

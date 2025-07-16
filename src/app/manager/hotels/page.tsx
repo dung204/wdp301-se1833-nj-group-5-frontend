@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 
 import { getQueryClient } from '@/base/lib';
-import { hotelSearchParamsSchema, hotelsService } from '@/modules/hotels';
+import { hotelsService, managerHotelSearchParamsSchema } from '@/modules/hotels';
 import { ManagerHotelsPage } from '@/modules/hotels/pages/manager-hotels.page';
 
 type PageProps = {
@@ -10,7 +10,7 @@ type PageProps = {
 
 export default async function Page({ searchParams }: PageProps) {
   const awaitedSearchParams = await searchParams;
-  const validatedSearchParams = hotelSearchParamsSchema.parse(awaitedSearchParams);
+  const validatedSearchParams = managerHotelSearchParamsSchema.parse(awaitedSearchParams);
   const queryClient = getQueryClient();
 
   await queryClient.prefetchQuery({
