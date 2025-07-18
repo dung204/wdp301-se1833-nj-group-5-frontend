@@ -45,6 +45,8 @@ export type HotelSearchParams = Partial<z.infer<typeof hotelSearchParamsSchema>>
 
 export interface Hotel extends BaseEntity {
   name: string;
+  province: string;
+  commune: string;
   address: string;
   description: string;
   owner: User;
@@ -63,10 +65,24 @@ export interface Hotel extends BaseEntity {
 
 export const createHotelSchema = z.object({
   name: z.string().trim().nonempty('Tên khách sạn không được để trống'),
+  province: z.string().trim().nonempty('Vui lòng chọn tỉnh/thành phố'),
+  commune: z.string().trim().nonempty('Vui lòng chọn xã/phường'),
   address: z.string().trim().nonempty('Địa chỉ không được để trống'),
   description: z.string().trim().nonempty('Mô tả không được để trống'),
-  phoneNumber: z.string().trim().nonempty('Số điện thoại không được để trống'),
-  priceHotel: z.coerce.number().positive('Giá tiền phải là số dương'),
+  phoneNumber: z
+    .string()
+    .trim()
+    .nonempty('Số điện thoại không được để trống')
+    .regex(
+      /^((\+84)|0)(3[2-9]|5[25689]|7[06-9]|8[1-9]|9[0-9])\d{7}$/,
+      'Số điện thoại không đúng định dạng (VD: 0901234567 hoặc +84901234567)',
+    ),
+  priceHotel: z.coerce
+    .number({
+      invalid_type_error: 'Giá tiền phải là số',
+    })
+    .min(1000, 'Giá tiền tối thiểu là 1,000 VND')
+    .positive('Giá tiền phải là số dương'),
   checkinTime: z
     .object(
       {
