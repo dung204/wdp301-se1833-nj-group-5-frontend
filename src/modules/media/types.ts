@@ -1,13 +1,19 @@
-export type ImagePayload = {
-  file: File | null;
-  fileName?: string;
-  previewUrl: string;
-};
+import { z } from 'zod';
 
-export type ImageResponse = {
-  fileName: string;
-  url: string;
-};
+export const imagePayloadSchema = z.object({
+  file: z.instanceof(File).nullable(),
+  fileName: z.string().optional(),
+  previewUrl: z.string(),
+});
+
+export type ImagePayload = z.infer<typeof imagePayloadSchema>;
+
+export const imageResponseSchema = z.object({
+  fileName: z.string(),
+  url: z.string(),
+});
+
+export type ImageResponse = z.infer<typeof imageResponseSchema>;
 
 export class VideoPayload {
   file: File | null = null;

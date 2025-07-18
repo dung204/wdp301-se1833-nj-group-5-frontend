@@ -4,32 +4,28 @@ import { useSuspenseQuery } from '@tanstack/react-query';
 import {
   Bed,
   Car,
-  CheckCircle,
   Clock,
   Coffee,
-  CreditCard,
   Dumbbell,
   MapPin,
-  Maximize,
   Phone,
   StarIcon,
   Tv,
-  Users,
   Utensils,
   Waves,
   Wifi,
   Wind,
-  XCircle,
 } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import type React from 'react';
-import { useState } from 'react';
 
+import { Pagination } from '@/base/components/layout/pagination';
 import { Badge } from '@/base/components/ui/badge';
 import { Button } from '@/base/components/ui/button';
 import { Card, CardContent } from '@/base/components/ui/card';
 import { Room, RoomSearchParams } from '@/modules/rooms';
+import { RoomCard } from '@/modules/rooms/components/room-card';
 import { roomsService } from '@/modules/rooms/services/rooms.service';
 
 import { hotelsService } from '../services/hotels.service';
@@ -56,9 +52,8 @@ function getAmenityIcon(amenity: string) {
   return <IconComponent className="h-4 w-4" />;
 }
 
-export function RoomsPage({ searchParams, hotelId }: RoomsPageProps) {
+export function HotelDetailsPage({ searchParams, hotelId }: RoomsPageProps) {
   const router = useRouter();
-  const [_, setPage] = useState(1);
   const {
     data: { data: hotels },
   } = useSuspenseQuery({
@@ -69,7 +64,7 @@ export function RoomsPage({ searchParams, hotelId }: RoomsPageProps) {
   const {
     data: {
       data: rooms,
-      metadata: { pagination },
+      metadata: { pagination: roomsPagination },
     },
   } = useSuspenseQuery({
     queryKey: ['rooms', 'all', { ...searchParams, hotel: hotelId }],
@@ -259,179 +254,16 @@ export function RoomsPage({ searchParams, hotelId }: RoomsPageProps) {
             <div className="flex items-center gap-4">
               <Badge variant="outline" className="bg-white px-4 py-2 text-base font-medium">
                 <Bed className="mr-2 h-4 w-4" />
-                {pagination?.total || 0} phòng có sẵn
+                {roomsPagination?.total || 0} phòng có sẵn
               </Badge>
             </div>
           </div>
 
-          {/* Rooms Grid */}
           <div className="space-y-6">
-            {rooms?.map((room: Room) => (
-              <Card
-                key={room.id}
-                className="group overflow-hidden border-0 bg-white/80 p-0 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl"
-              >
-                <div className="lg:flex">
-                  {/* Room Image */}
-                  <div className="relative h-64 overflow-hidden lg:h-auto lg:w-96">
-                    <Image
-                      src={room.images[0].url}
-                      alt={room.name}
-                      fill
-                      className="object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                    {room.isSoldOut && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/60">
-                        <div className="flex items-center gap-2 rounded-full bg-red-500 px-4 py-2 font-semibold text-white">
-                          <XCircle className="h-4 w-4" />
-                          Hết phòng
-                        </div>
-                      </div>
-                    )}
-                    {!room.isSoldOut && (
-                      <div className="absolute top-4 left-4">
-                        <Badge className="bg-green-500 text-white hover:bg-green-600">
-                          <CheckCircle className="mr-1 h-3 w-3" />
-                          Còn phòng
-                        </Badge>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Room Details */}
-                  <div className="flex-1 p-8">
-                    <div className="mb-6 flex items-start justify-between">
-                      <div className="flex-1">
-                        <h3 className="mb-2 text-2xl font-bold text-gray-900">{room.name}</h3>
-                        <div className="mb-4 flex items-center gap-4 text-gray-600">
-                          <div className="flex items-center gap-1">
-                            <Maximize className="h-4 w-4" />
-                            <span className="text-sm">{room.size} m²</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Users className="h-4 w-4" />
-                            <span className="text-sm">Tối đa {room.maxQuantity} người</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="text-right">
-                        <div className="mb-1 text-3xl font-bold text-blue-600">
-                          {room.rate?.toLocaleString('vi-VN')}₫
-                        </div>
-                        <div className="text-sm text-gray-500">/ đêm</div>
-                      </div>
-                    </div>
-
-                    {/* Room Amenities */}
-                    <div className="mb-6">
-                      <h4 className="mb-3 text-lg font-semibold text-gray-900">Tiện nghi phòng</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {room.services?.map((amenity: string, index: number) => (
-                          <Badge
-                            key={index}
-                            variant="outline"
-                            className="border-gray-200 bg-gray-50 px-3 py-1 hover:bg-gray-100"
-                          >
-                            {amenity}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Availability Info */}
-                    <div className="mb-6 grid grid-cols-3 gap-4">
-                      <div className="rounded-xl bg-gray-50 p-4 text-center">
-                        <div className="text-2xl font-bold text-gray-900">
-                          {room.availability.total}
-                        </div>
-                        <div className="text-sm text-gray-600">Tổng số phòng</div>
-                      </div>
-                      <div className="rounded-xl bg-orange-50 p-4 text-center">
-                        <div className="text-2xl font-bold text-orange-600">
-                          {room.availability.booked}
-                        </div>
-                        <div className="text-sm text-gray-600">Đã đặt</div>
-                      </div>
-                      <div
-                        className={`rounded-xl p-4 text-center ${+room.availability.available === 0 ? 'bg-red-50' : 'bg-green-50'}`}
-                      >
-                        <div
-                          className={`text-2xl font-bold ${+room.availability.available === 0 ? 'text-red-600' : 'text-green-600'}`}
-                        >
-                          {room.availability.available}
-                        </div>
-                        <div className="text-sm text-gray-600">Còn lại</div>
-                      </div>
-                    </div>
-
-                    {/* Booking Button */}
-                    <div className="flex justify-center">
-                      <Button
-                        className={`rounded-xl px-8 py-3 text-base font-semibold transition-all duration-300 ${
-                          room.isSoldOut
-                            ? 'cursor-not-allowed bg-gray-300 hover:bg-gray-300'
-                            : 'transform bg-gradient-to-r from-blue-600 to-indigo-600 shadow-lg hover:-translate-y-0.5 hover:from-blue-700 hover:to-indigo-700 hover:shadow-xl'
-                        }`}
-                        disabled={room.isSoldOut}
-                      >
-                        <CreditCard className="mr-2 h-5 w-5" />
-                        {room.isSoldOut ? 'Hết phòng' : 'Đặt phòng ngay'}
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            ))}
+            {rooms?.map((room: Room) => <RoomCard key={room.id} room={room} />)}
           </div>
 
-          {/* Pagination */}
-          {pagination && (
-            <div className="flex items-center justify-between rounded-2xl border border-gray-100 bg-white/80 p-6 backdrop-blur-sm">
-              <div className="text-gray-600">
-                Trang <span className="font-semibold">{pagination.currentPage}</span> /{' '}
-                <span className="font-semibold">{pagination.totalPage}</span>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  disabled={!pagination.hasPreviousPage}
-                  onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-                  className="hover:border-blue-200 hover:bg-blue-50"
-                >
-                  Trang trước
-                </Button>
-
-                {Array.from({ length: Math.min(5, pagination.totalPage) }, (_, i) => {
-                  const pageNumber = i + Math.max(1, pagination.currentPage - 2);
-                  return pageNumber <= pagination.totalPage ? (
-                    <Button
-                      key={pageNumber}
-                      variant={pageNumber === pagination.currentPage ? 'default' : 'outline'}
-                      onClick={() => setPage(pageNumber)}
-                      className={
-                        pageNumber === pagination.currentPage
-                          ? 'bg-blue-600 hover:bg-blue-700'
-                          : 'hover:border-blue-200 hover:bg-blue-50'
-                      }
-                    >
-                      {pageNumber}
-                    </Button>
-                  ) : null;
-                })}
-
-                <Button
-                  variant="outline"
-                  disabled={!pagination.hasNextPage}
-                  onClick={() => setPage((prev) => prev + 1)}
-                  className="hover:border-blue-200 hover:bg-blue-50"
-                >
-                  Trang sau
-                </Button>
-              </div>
-            </div>
-          )}
+          <Pagination pagination={roomsPagination} />
 
           {/* Empty State */}
           {(!rooms || rooms.length === 0) && (

@@ -71,14 +71,14 @@ import {
   CancelPolicy,
   CreateHotelSchema,
   Hotel,
-  HotelSearchParams,
+  ManagerHotelSearchParams,
   UpdateHotelSchema,
   cancelPolicies,
 } from '../types';
 import { HotelUtils } from '../utils/hotel.utils';
 
 type ManagerHotelsPageProps = {
-  searchParams: HotelSearchParams;
+  searchParams: ManagerHotelSearchParams;
 };
 
 type SortColumn = 'name' | 'address' | 'owner' | 'price';
