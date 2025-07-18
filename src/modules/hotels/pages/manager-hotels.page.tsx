@@ -581,6 +581,9 @@ function EditHotelDialog({ hotel, onSuccess, ...props }: EditHotelDialogProps) {
               to: new Date(hotel?.checkinTime.to || ''),
             },
             checkoutTime: new Date(hotel?.checkoutTime || ''),
+            // Set default values for province and commune fields from existing hotel data
+            province: hotel?.province || '',
+            commune: hotel?.commune || '',
             images: {
               newImages: (hotel?.images || []).map((image) => ({
                 file: null,
