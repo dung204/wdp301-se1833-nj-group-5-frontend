@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   type LucideIcon,
   Percent,
+  UserCheck,
   Users,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -55,6 +56,13 @@ const navItems: NavItem[] = [
     url: '/manager/users',
     icon: Users,
     title: 'Quản lý Khách hàng',
+    role: [Role.ADMIN],
+  },
+  {
+    name: 'RoleUpgradeRequests',
+    url: '/manager/role-upgrade-requests',
+    icon: UserCheck,
+    title: 'Yêu cầu nâng cấp tài khoản',
     role: [Role.ADMIN],
   },
   {
