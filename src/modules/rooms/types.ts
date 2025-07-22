@@ -12,7 +12,7 @@ export const roomSearchParamsSchema = commonSearchParamsSchema.extend({
   hotel: z.string().trim().optional(),
   checkIn: z.string().optional(),
   checkOut: z.string().optional(),
-  minOccupancy: z.coerce.number().int().min(1).catch(2).default(2),
+  minOccupancy: z.coerce.number().int().min(1).catch(1).default(1),
   minPrice: z.coerce
     .number()
     .nonnegative()

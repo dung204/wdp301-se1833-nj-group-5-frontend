@@ -1,3 +1,9 @@
+import { HotelDashboard } from '@/modules/dashboard/pages/HotelDashboard';
+
 export default function Page() {
-  return <div>Dashboard</div>;
+  return (
+    <div>
+      <HotelDashboard />
+    </div>
+  );
 }

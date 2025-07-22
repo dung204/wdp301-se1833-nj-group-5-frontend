@@ -8,7 +8,7 @@ class BookingsService extends HttpClient {
     super();
   }
 
-  getAllBookings(params: BookingsSearchParams) {
+  getAllBookings(params?: BookingsSearchParams) {
     return this.get<SuccessResponse<Booking[]>>('/bookings', {
       params,
       isPrivateRoute: true,

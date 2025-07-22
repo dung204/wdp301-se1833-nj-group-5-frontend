@@ -11,7 +11,6 @@ export default async function Page({ searchParams }: PageProps) {
   const awaitedSearchParams = await searchParams;
   const validatedSearchParams = roomSearchParamsSchema.parse(awaitedSearchParams);
   const queryClient = getQueryClient();
-
   await queryClient.prefetchQuery({
     queryKey: ['rooms', 'all', validatedSearchParams],
     queryFn: () => roomsService.getAllRooms(validatedSearchParams),

@@ -51,12 +51,12 @@ export function HotelAndRoomInfoCard({ currentBooking }: HotelAndRoomInfoCardPro
       <CardContent className="flex flex-col gap-6">
         <div className="grid grid-cols-5 gap-3">
           <div className="relative col-span-1">
-            <Image
+            {/* <Image
               src={hotel.images[0].url}
               alt={hotel.name}
               fill
               className="rounded-md object-cover object-center"
-            />
+            /> */}
           </div>
           <div className="col-span-4 flex flex-col gap-2">
             <h3 className="line-clamp-1 text-xl font-semibold" title={hotel.name}>
