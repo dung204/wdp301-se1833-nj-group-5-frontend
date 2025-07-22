@@ -282,6 +282,7 @@ type FormFieldSpec<TFieldValues extends FieldValues = FieldValues> = {
   | ({
       type: 'select';
       async?: false;
+      onChange?: (value: string | string[]) => void;
       /**
        * A custom render function for the form field.
        *
@@ -915,13 +916,17 @@ function SelectFormControl({
     <Select
       {...formField}
       value={form.getValues(formField.name)}
-      onChange={(value: string | string[]) =>
+      onChange={(value: string | string[]) => {
         form.setValue(formField.name, value, {
           shouldDirty: true,
           shouldTouch: true,
           shouldValidate: true,
-        })
-      }
+        });
+        // Call the custom onChange if it exists
+        if ('onChange' in formField && formField.onChange) {
+          formField.onChange(value);
+        }
+      }}
       placeholder={formField.placeholder ?? t(`fields.${formField.name}.placeholder` as any)}
       triggerClassName={cn(
         {

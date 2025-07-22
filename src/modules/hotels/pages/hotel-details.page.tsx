@@ -28,6 +28,7 @@ import { Room, RoomSearchParams } from '@/modules/rooms';
 import { RoomCard } from '@/modules/rooms/components/room-card';
 import { roomsService } from '@/modules/rooms/services/rooms.service';
 
+import { HotelSearchBoxSmall } from '../components/hotel-search-box';
 import { hotelsService } from '../services/hotels.service';
 
 type RoomsPageProps = {
@@ -75,6 +76,7 @@ export function HotelDetailsPage({ searchParams, hotelId }: RoomsPageProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+      <HotelSearchBoxSmall />
       <div className="mx-auto max-w-7xl space-y-8 p-6">
         {/* Hotel Information Section */}
         {hotel && (

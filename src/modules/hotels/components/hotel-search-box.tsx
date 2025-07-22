@@ -1,7 +1,8 @@
 'use client';
 
+import { useQueries } from '@tanstack/react-query';
 import { addDays, differenceInDays, format } from 'date-fns';
-import { CalendarIcon, MinusIcon, PlusIcon, SearchIcon, Users } from 'lucide-react';
+import { CalendarIcon, MapPin, MinusIcon, PlusIcon, Users } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import * as React from 'react';
@@ -18,12 +19,23 @@ import {
 import { Button } from '@/base/components/ui/button';
 import { Calendar } from '@/base/components/ui/calendar';
 import { Card, CardContent } from '@/base/components/ui/card';
+import {
+  Command,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/base/components/ui/command';
 import { Input } from '@/base/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/base/components/ui/popover';
+import { Skeleton } from '@/base/components/ui/skeleton';
+import { useDebounce } from '@/base/hooks';
 import { cn } from '@/base/lib';
 import { DateTimeUtils } from '@/base/utils';
+import { Province, provincesService } from '@/modules/provinces';
 
-import { hotelSearchParamsSchema } from '../types';
+import { hotelsService } from '../services/hotels.service';
+import { Hotel, hotelSearchParamsSchema } from '../types';
 
 export function HotelSearchBox() {
   const router = useRouter();
@@ -38,7 +50,7 @@ export function HotelSearchBox() {
     to: addDays(new Date(), 1), // 20 Jun 2025
   });
 
-  const handleSearch = () => {
+  const handleSearch = (searchResult?: SearchResult) => {
     if (searchQuery.trim() === '') {
       setSearchQueryEmptyDialogOpen(true);
       return;
@@ -57,10 +69,19 @@ export function HotelSearchBox() {
     const searchParams = new URLSearchParams();
 
     searchParams.set('searchTerm', searchQuery);
+    if (searchResult) {
+      searchParams.set('searchTerm', searchResult.data.name);
+    }
+
     searchParams.set('checkIn', format(dateRange.from, 'yyyy-MM-dd'));
     searchParams.set('checkOut', format(dateRange.to, 'yyyy-MM-dd'));
     searchParams.set('rooms', rooms.toString());
     searchParams.set('occupancy', numberOfPeople.toString());
+
+    if (searchResult && searchResult.type === 'hotel') {
+      router.push(`/hotels/${searchResult.data.id}?${searchParams.toString()}`);
+      return;
+    }
 
     router.push(`/hotels?${searchParams.toString()}`);
   };
@@ -86,11 +107,12 @@ export function HotelSearchBox() {
               <Card>
                 <CardContent className="flex flex-col gap-4">
                   <div className="grid grid-cols-1 gap-4 px-6 md:grid-cols-3">
-                    <div className="col-span-1 md:col-span-3">
+                    <div className="relative col-span-1 h-14 md:col-span-3">
                       <SearchInput
                         value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full"
+                        className="absolute inset-0"
+                        onChange={setSearchQuery}
+                        onResultClick={(result) => handleSearch(result)}
                       />
                     </div>
                     <div className="col-span-3 grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -154,7 +176,7 @@ export function HotelSearchBoxSmall() {
     to: checkOut,
   });
 
-  const handleSearch = () => {
+  const handleSearch = (searchResult?: SearchResult) => {
     if (searchQuery.trim() === '') {
       setSearchQueryEmptyDialogOpen(true);
       return;
@@ -170,26 +192,38 @@ export function HotelSearchBoxSmall() {
       return;
     }
 
-    const url = new URL(window.location.href);
+    const searchParams = new URLSearchParams();
 
-    url.searchParams.set('searchTerm', searchQuery);
-    url.searchParams.set('checkIn', format(dateRange.from, 'yyyy-MM-dd'));
-    url.searchParams.set('checkOut', format(dateRange.to, 'yyyy-MM-dd'));
-    url.searchParams.set('rooms', rooms.toString());
-    url.searchParams.set('', numberOfPeople.toString());
+    searchParams.set('searchTerm', searchQuery);
+    if (searchResult) {
+      searchParams.set('searchTerm', searchResult.data.name);
+    }
 
-    router.push(url.href);
+    searchParams.set('checkIn', format(dateRange.from, 'yyyy-MM-dd'));
+    searchParams.set('checkOut', format(dateRange.to, 'yyyy-MM-dd'));
+    searchParams.set('rooms', rooms.toString());
+    searchParams.set('occupancy', numberOfPeople.toString());
+
+    if (searchResult && searchResult.type === 'hotel') {
+      router.push(`/hotels/${searchResult.data.id}?${searchParams.toString()}`);
+      return;
+    }
+
+    router.push(`/hotels?${searchParams.toString()}`);
   };
 
   return (
     <>
       <section className="bg-blue-900">
         <div className="mx-auto grid max-w-7xl grid-cols-24 items-center gap-2 px-4 py-2">
-          <SearchInput
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="col-span-7"
-          />
+          <div className="relative col-span-7 h-14">
+            <SearchInput
+              value={searchQuery}
+              className="absolute inset-0"
+              onChange={setSearchQuery}
+              onResultClick={(result) => handleSearch(result)}
+            />
+          </div>
           <CheckInCheckOutDatePicker
             dateRange={dateRange}
             setDateRange={setDateRange}
@@ -222,147 +256,166 @@ export function HotelSearchBoxSmall() {
   );
 }
 
-function SearchInput({ value, onChange, className }: React.ComponentProps<typeof Input>) {
+type SearchResult =
+  | {
+      type: 'hotel';
+      data: Hotel;
+    }
+  | {
+      type: 'province';
+      data: Province;
+    };
+
+interface SearchInputProps {
+  value?: string;
+  onChange?: (value: string) => void;
+  className?: string;
+  onResultClick?: (result: SearchResult) => void;
+}
+
+function SearchInput({ value, className, onChange, onResultClick }: SearchInputProps) {
   const [showSearchDropdown, setShowSearchDropdown] = React.useState(false);
+  const [searchTerm, setSearchTerm] = React.useState(value ?? '');
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
-  React.useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      if (!target.closest('input') && !target.closest('.search-dropdown')) {
-        setShowSearchDropdown(false);
+  const searchResults = useQueries({
+    queries: [
+      {
+        queryKey: ['hotels', 'all', { name: debouncedSearchTerm, pageSize: 6 }],
+        queryFn: () => hotelsService.getAllHotels({ name: debouncedSearchTerm, pageSize: 6 }),
+        enabled: debouncedSearchTerm !== '',
+      },
+      {
+        queryKey: ['provinces', 'all', { searchTerm: debouncedSearchTerm }],
+        queryFn: () => provincesService.getAllProvinces(debouncedSearchTerm),
+        enabled: debouncedSearchTerm !== '',
+      },
+    ],
+    combine: (results) => {
+      if (debouncedSearchTerm === '') {
+        return [];
       }
-    };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
+      const hotels = results[0].data?.data;
+      const provinces = results[1].data;
+
+      const combinedResults = [
+        ...(hotels || []).map((hotel) => ({
+          type: 'hotel',
+          data: hotel,
+        })),
+
+        ...(provinces || []).map((province) => ({
+          type: 'province',
+          data: province,
+        })),
+      ] as SearchResult[];
+
+      // return combinedResults.slice(0, 6); // Limit to 6 results
+
+      return {
+        data: combinedResults.slice(0, 6),
+        isPending: results.some((result) => result.isPending),
+      };
+    },
+  }) as { data?: SearchResult[]; isPending: boolean };
+
+  const isSearching = searchTerm !== debouncedSearchTerm || searchResults.isPending;
 
   return (
-    <div className={cn('search-dropdown-container relative size-full', className)}>
-      <div
-        className={cn(
-          'border-input flex size-full items-center rounded-md border bg-white px-4 pr-2 transition-all',
-          'has-[input:focus-visible]:border-ring has-[input:focus-visible]:ring-ring/50 has-[input:focus-visible]:ring-[3px]',
-          'has-[input[aria-invalid="true"]]:ring-danger/20 dark:has-[input[aria-invalid="true"]]:ring-danger/40 has-[input[aria-invalid="true"]]:border-danger',
-          'py-2',
-        )}
-      >
-        <SearchIcon className="text-muted-foreground" />
-        <Input
-          autoFocus
-          className="rounded-none border-0 text-base! shadow-none ring-0 focus-visible:ring-0"
-          onClick={() => setShowSearchDropdown(true)}
-          placeholder="Nhập điểm du lịch hoặc tên khách sạn"
-          value={value}
-          onChange={onChange}
-        />
-      </div>
-      {showSearchDropdown && (
-        <div className="absolute top-full right-0 left-0 z-50 mt-1 max-h-[80vh] w-full overflow-hidden overflow-y-auto rounded-lg border bg-white shadow-lg">
-          <div className="p-4">
-            <h3 className="mb-2 text-sm font-medium text-gray-500">Tìm kiếm gần đây</h3>
-            <div className="mb-4 grid grid-cols-1 gap-2 md:grid-cols-3">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="cursor-pointer rounded border p-2 hover:bg-gray-50">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="text-sm font-medium">Phan Thiết, Việt Nam</p>
-                      <p className="text-xs text-gray-500">
-                        {i === 1
-                          ? '21 tháng 5 2025 - 25 tháng 5 2025'
-                          : i === 2
-                            ? '16 tháng 5 2025 - 21 tháng 5 2025'
-                            : '18 tháng 5 2025 - 19 tháng 5 2025'}
-                      </p>
-                    </div>
-                    <button className="text-gray-400 hover:text-gray-600"></button>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div>
-                <h3 className="mb-2 text-sm font-medium text-gray-500">Các điểm đến ở Việt Nam</h3>
-                <div className="space-y-3">
-                  {[
-                    {
-                      name: 'Hồ Chí Minh',
-                      count: '15,546',
-                      desc: 'nhà hàng, mua sắm',
-                    },
-                    {
-                      name: 'Hà Nội',
-                      count: '10,744',
-                      desc: 'nhà hàng, tham quan',
-                    },
-                  ].map((city, index) => (
-                    <div
-                      key={index}
-                      className="flex cursor-pointer items-center gap-3 rounded p-2 hover:bg-gray-50"
-                    >
-                      <Image
-                        src={`/placeholder.svg?height=40&width=40`}
-                        width={40}
-                        height={40}
-                        alt={city.name}
-                        className="rounded object-cover"
-                      />
-                      <div>
-                        <p className="text-sm font-medium">
-                          {city.name}{' '}
-                          <span className="font-normal text-gray-400">({city.count})</span>
-                        </p>
-                        <p className="text-xs text-gray-500">{city.desc}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <h3 className="mb-2 text-sm font-medium text-gray-500">Các điểm đến quốc tế</h3>
-                <div className="space-y-3">
-                  {[
-                    { name: 'Seoul', count: '5,945', desc: 'mua sắm, nhà hàng' },
-                    {
-                      name: 'Bangkok',
-                      count: '12,048',
-                      desc: 'mua sắm, nhà hàng',
-                    },
-                    {
-                      name: 'Tokyo',
-                      count: '12,496',
-                      desc: 'mua sắm, tham quan',
-                    },
-                  ].map((city, index) => (
-                    <div
-                      key={index}
-                      className="flex cursor-pointer items-center gap-3 rounded p-2 hover:bg-gray-50"
-                    >
-                      <Image
-                        src={`/placeholder.svg?height=40&width=40`}
-                        width={40}
-                        height={40}
-                        alt={city.name}
-                        className="rounded object-cover"
-                      />
-                      <div>
-                        <p className="text-sm font-medium">
-                          {city.name}{' '}
-                          <span className="font-normal text-gray-400">({city.count})</span>
-                        </p>
-                        <p className="text-xs text-gray-500">{city.desc}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+    <Command
+      shouldFilter={false}
+      className={cn(
+        'z-50 h-14 overflow-hidden border duration-300',
+        {
+          'h-max': showSearchDropdown,
+        },
+        className,
       )}
-    </div>
+      onFocus={() => setShowSearchDropdown(true)}
+      onBlur={() => setShowSearchDropdown(false)}
+    >
+      <CommandInput
+        placeholder="Nhập điểm du lịch hoặc tên khách sạn"
+        className="text-base"
+        searchIconClassName="size-6"
+        containerClassName={cn('gap-3 h-14 border-b border-b-transparent shrink-0', {
+          'border-b-border': showSearchDropdown,
+        })}
+        value={searchTerm}
+        onValueChange={(value) => {
+          setSearchTerm(value);
+          onChange?.(value);
+        }}
+      />
+      <CommandList className="max-h-max">
+        {isSearching ? (
+          <CommandGroup>
+            <div className="flex flex-col gap-2.5">
+              <CommandItem className="pointer-events-none">
+                <Skeleton className="h-5 w-1/2" />
+              </CommandItem>
+              <CommandItem className="pointer-events-none">
+                <Skeleton className="h-5 w-1/2" />
+              </CommandItem>
+              <CommandItem className="pointer-events-none">
+                <Skeleton className="h-5 w-1/2" />
+              </CommandItem>
+              <CommandItem className="pointer-events-none">
+                <Skeleton className="h-5 w-1/2" />
+              </CommandItem>
+              <CommandItem className="pointer-events-none">
+                <Skeleton className="h-5 w-1/2" />
+              </CommandItem>
+            </div>
+          </CommandGroup>
+        ) : (
+          (searchResults.data || []).map((result) => {
+            if (result.type === 'hotel') {
+              return (
+                <CommandItem
+                  key={`hotel-${result.data.id}`}
+                  className="flex cursor-pointer gap-2 select-none"
+                  onSelect={() => onResultClick?.(result)}
+                >
+                  <div className="relative aspect-square w-14 shrink-0 overflow-hidden rounded-md">
+                    <Image
+                      src={result.data.images[0].url}
+                      alt={result.data.name}
+                      fill
+                      className="object-cover object-center"
+                    />
+                  </div>
+                  <div className="flex flex-col items-start">
+                    <span className="line-clamp-1 text-base font-semibold">{result.data.name}</span>
+                    <span className="text-muted-foreground line-clamp-1 text-sm">
+                      Khách sạn ở {result.data.address}, {result.data.commune},{' '}
+                      {result.data.province}
+                    </span>
+                  </div>
+                </CommandItem>
+              );
+            }
+
+            return (
+              <CommandItem
+                key={`province-${result.data.code}`}
+                className="flex cursor-pointer items-center gap-2 select-none"
+                onSelect={() => onResultClick?.(result)}
+              >
+                <div className="bg-accent flex aspect-square w-14 items-center justify-center overflow-hidden rounded-md">
+                  <MapPin className="size-8 text-blue-500" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-base font-semibold">{result.data.name}</span>
+                  <span className="text-muted-foreground text-sm">Địa điểm</span>
+                </div>
+              </CommandItem>
+            );
+          })
+        )}
+      </CommandList>
+    </Command>
   );
 }
 
