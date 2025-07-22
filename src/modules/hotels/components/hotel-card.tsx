@@ -25,6 +25,7 @@ export function HotelCard({ hotel }: HotelCardProps) {
   const navigateToHotelDetails = () => {
     const url = new URL(`/hotels/${hotel.id}`, window.location.origin);
 
+    url.searchParams.set('searchTerm', hotel.name);
     url.searchParams.set('checkIn', format(checkIn, 'yyyy-MM-dd'));
     url.searchParams.set('checkOut', format(checkOut, 'yyyy-MM-dd'));
     url.searchParams.set('minOccupancy', minOccupancy.toString());
@@ -69,7 +70,9 @@ export function HotelCard({ hotel }: HotelCardProps) {
                 <h3 className="line-clamp-1 text-lg font-semibold text-gray-900">{hotel.name}</h3>
                 <div className="flex items-center text-gray-600">
                   <MapPinIcon className="mr-1 h-4 w-4 flex-shrink-0" />
-                  <span className="line-clamp-1 text-sm">{hotel.address}</span>
+                  <span className="line-clamp-1 text-sm">
+                    {hotel.address}, {hotel.commune}, {hotel.province}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-lg font-bold text-blue-600">{hotel.rating.toFixed(1)}</span>
