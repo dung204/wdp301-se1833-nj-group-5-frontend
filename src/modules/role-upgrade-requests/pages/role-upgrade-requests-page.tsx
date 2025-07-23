@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CheckCircle, Clock, Eye, User, XCircle } from 'lucide-react';
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { toast } from 'sonner';
 
 import { Badge } from '@/base/components/ui/badge';
@@ -47,15 +47,18 @@ export function RoleUpgradeRequestsPage() {
   const [adminNotes, setAdminNotes] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(10);
 
   const queryClient = useQueryClient();
 
   const { data: requestsData, isLoading } = useQuery({
-    queryKey: ['role-upgrade-requests'],
+    queryKey: ['role-upgrade-requests', statusFilter, currentPage, pageSize],
     queryFn: () =>
       roleUpgradeRequestService.getAllRequests({
-        page: 1,
-        pageSize: 100, // Fetch more data since we're doing client-side filtering
+        page: currentPage,
+        pageSize,
+        ...(statusFilter !== 'all' && { status: statusFilter as RoleUpgradeRequestStatus }),
       }),
   });
 
@@ -132,17 +135,20 @@ export function RoleUpgradeRequestsPage() {
     setIsDetailModalOpen(true);
   };
 
-  const allRequests = useMemo(() => {
-    return requestsData?.data || [];
-  }, [requestsData?.data]);
+  const requests = requestsData?.data || [];
+  const pagination = requestsData?.metadata?.pagination;
 
-  // Apply client-side filtering as backup if server-side filtering doesn't work
-  const requests = useMemo(() => {
-    if (statusFilter === 'all') {
-      return allRequests;
-    }
-    return allRequests.filter((request) => request.status === statusFilter);
-  }, [allRequests, statusFilter]);
+  // For statistics, we need all data regardless of current page/filter
+  const { data: allRequestsData } = useQuery({
+    queryKey: ['role-upgrade-requests-all'],
+    queryFn: () =>
+      roleUpgradeRequestService.getAllRequests({
+        page: 1,
+        pageSize: 1000, // Get all data for statistics
+      }),
+  });
+
+  const allRequests = allRequestsData?.data || [];
 
   if (isLoading) {
     return (
@@ -224,7 +230,10 @@ export function RoleUpgradeRequestsPage() {
             { value: RoleUpgradeRequestStatus.REJECTED, label: 'Đã từ chối' },
           ]}
           value={statusFilter}
-          onChange={(value) => setStatusFilter(value || 'all')}
+          onChange={(value) => {
+            setStatusFilter(value || 'all');
+            setCurrentPage(1); // Reset to first page when filter changes
+          }}
           placeholder="Lọc theo trạng thái"
           triggerClassName="w-48"
         />
@@ -233,7 +242,12 @@ export function RoleUpgradeRequestsPage() {
       {/* Requests Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Danh sách yêu cầu ({requests.length})</CardTitle>
+          <CardTitle>
+            Danh sách yêu cầu
+            {pagination
+              ? ` (${pagination.total} total, showing page ${currentPage} of ${pagination.totalPage})`
+              : ` (${requests.length})`}
+          </CardTitle>
           <CardDescription>Quản lý các yêu cầu nâng cấp tài khoản</CardDescription>
         </CardHeader>
         <CardContent>
@@ -305,6 +319,53 @@ export function RoleUpgradeRequestsPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Pagination */}
+      {pagination && pagination.totalPage > 1 && (
+        <div className="flex items-center justify-between">
+          <div className="text-muted-foreground text-sm">
+            Showing {(currentPage - 1) * pageSize + 1} to{' '}
+            {Math.min(currentPage * pageSize, pagination.total)} of {pagination.total} results
+          </div>
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(currentPage - 1)}
+              disabled={!pagination.hasPreviousPage}
+            >
+              Previous
+            </Button>
+
+            <div className="flex items-center space-x-1">
+              {Array.from({ length: Math.min(5, pagination.totalPage) }, (_, i) => {
+                const page = Math.max(1, Math.min(pagination.totalPage - 4, currentPage - 2)) + i;
+                if (page > pagination.totalPage) return null;
+
+                return (
+                  <Button
+                    key={page}
+                    variant={currentPage === page ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setCurrentPage(page)}
+                  >
+                    {page}
+                  </Button>
+                );
+              })}
+            </div>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(currentPage + 1)}
+              disabled={!pagination.hasNextPage}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Detail Modal */}
       <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
