@@ -2,7 +2,7 @@
 
 import { Crown, Loader2, Settings } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { Button } from '@/base/components/ui/button';
@@ -39,14 +39,7 @@ export function RoleManagementButton({ userRole, onUpgradeSuccess }: RoleManagem
   const [isLoading, setIsLoading] = useState(false);
   const [existingRequest, setExistingRequest] = useState<RoleUpgradeRequest | null>(null);
 
-  // Check for existing request when component mounts
-  useEffect(() => {
-    if (userRole === Role.CUSTOMER) {
-      checkExistingRequest();
-    }
-  }, [userRole]);
-
-  const checkExistingRequest = async () => {
+  const checkExistingRequest = useCallback(async () => {
     try {
       const response = await roleUpgradeRequestService.getCurrentUserRequest();
       setExistingRequest(response.data);
@@ -55,7 +48,14 @@ export function RoleManagementButton({ userRole, onUpgradeSuccess }: RoleManagem
       // Don't break the UI - just set to null so the button works normally
       setExistingRequest(null);
     }
-  };
+  }, []);
+
+  // Check for existing request when component mounts
+  useEffect(() => {
+    if (userRole === Role.CUSTOMER) {
+      checkExistingRequest();
+    }
+  }, [userRole, checkExistingRequest]);
 
   // Show manage hotel button for HOTEL_OWNER
   if (userRole === Role.HOTEL_OWNER) {
@@ -76,12 +76,22 @@ export function RoleManagementButton({ userRole, onUpgradeSuccess }: RoleManagem
 
   // Show status for existing request
   if (existingRequest) {
+    // If request is approved, show management button (user should be upgraded)
+    if (existingRequest.status === RoleUpgradeRequestStatus.APPROVED) {
+      return (
+        <Button asChild variant="outline" size="sm" className="gap-2">
+          <Link href="/manager/dashboard">
+            <Settings className="h-4 w-4" />
+            Quản lý khách sạn
+          </Link>
+        </Button>
+      );
+    }
+
     const getStatusText = (status: RoleUpgradeRequestStatus) => {
       switch (status) {
         case RoleUpgradeRequestStatus.PENDING:
           return 'Yêu cầu đang chờ xử lý';
-        case RoleUpgradeRequestStatus.APPROVED:
-          return 'Yêu cầu đã được phê duyệt';
         case RoleUpgradeRequestStatus.REJECTED:
           return 'Yêu cầu đã bị từ chối';
         default:
@@ -93,8 +103,6 @@ export function RoleManagementButton({ userRole, onUpgradeSuccess }: RoleManagem
       switch (status) {
         case RoleUpgradeRequestStatus.PENDING:
           return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-        case RoleUpgradeRequestStatus.APPROVED:
-          return 'bg-green-100 text-green-800 border-green-200';
         case RoleUpgradeRequestStatus.REJECTED:
           return 'bg-red-100 text-red-800 border-red-200';
         default:

@@ -57,8 +57,23 @@ class RoleUpgradeRequestService extends HttpClient {
       // Fetch the updated request to get the user info
       const updatedRequest = await this.getRequestById(requestId);
       if (updatedRequest.data && updatedRequest.data.status === 'APPROVED') {
-        // The user's role should be updated in the database
-        // Force a page reload to refresh all server components with new cookie data
+        // Import userService to get updated user data
+        const { userService } = await import('@/modules/users');
+        const userProfile = await userService.getUserProfile();
+
+        // Update the user cookie with the new role
+        await fetch('/api/auth/set-user', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: userProfile.data.id,
+            role: userProfile.data.role,
+            fullName: userProfile.data.fullName,
+            gender: userProfile.data.gender,
+          }),
+        });
+
+        // Reload the page to refresh all components with the new role
         window.location.reload();
       }
     } catch (error) {
