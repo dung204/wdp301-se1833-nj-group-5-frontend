@@ -1,6 +1,6 @@
 'use client';
 
-import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { ArrowRightIcon, DoorOpenIcon, MailIcon, OctagonX, UserRoundIcon } from 'lucide-react';
 import Link from 'next/link';
@@ -36,6 +36,7 @@ interface BookRoomPageProps {
 export function BookRoomPage({ currentBooking }: BookRoomPageProps) {
   const router = useRouter();
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(PaymentMethod.COD);
+  const queryClient = useQueryClient();
 
   const { mutate: triggerCreateBooking, isPending: isCreatingBooking } = useMutation({
     mutationFn: () =>
@@ -45,7 +46,7 @@ export function BookRoomPage({ currentBooking }: BookRoomPageProps) {
       }),
     onSuccess: async ({ data: createdBooking }) => {
       await axios.delete('/api/book/delete');
-
+      await queryClient.invalidateQueries({ queryKey: ['rooms', 'all'] });
       if (paymentMethod === PaymentMethod.PAYMENT_GATEWAY) {
         window.location.href = createdBooking.paymentLink!;
         return;

@@ -40,7 +40,7 @@ export const HotelDashboard = () => {
     selectedHotelIds.length == 0 || selectedHotelIds.includes(hotelId);
 
   const { data: hotels, isLoading: loadingHotels } = useQuery({
-    queryKey: ['hotels', 'admin', 'all'],
+    queryKey: ['hotels', 'admin', 'count'],
     queryFn: () => hotelsService.getHotelByAdmin(),
   });
   const hotelOptions = (hotels?.data ?? []).map((hotel) => ({
