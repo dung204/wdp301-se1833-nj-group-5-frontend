@@ -50,6 +50,21 @@ class RoleUpgradeRequestService extends HttpClient {
       },
     );
   }
+
+  // Helper method to refresh user data after role upgrade
+  public async refreshUserAfterApproval(requestId: string) {
+    try {
+      // Fetch the updated request to get the user info
+      const updatedRequest = await this.getRequestById(requestId);
+      if (updatedRequest.data && updatedRequest.data.status === 'APPROVED') {
+        // The user's role should be updated in the database
+        // Force a page reload to refresh all server components with new cookie data
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error('Failed to refresh user data after approval:', error);
+    }
+  }
 }
 
 export const roleUpgradeRequestService = new RoleUpgradeRequestService();

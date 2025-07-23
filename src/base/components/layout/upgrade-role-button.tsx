@@ -52,6 +52,8 @@ export function RoleManagementButton({ userRole, onUpgradeSuccess }: RoleManagem
       setExistingRequest(response.data);
     } catch (error) {
       console.error('Error checking existing request:', error);
+      // Don't break the UI - just set to null so the button works normally
+      setExistingRequest(null);
     }
   };
 
@@ -78,8 +80,6 @@ export function RoleManagementButton({ userRole, onUpgradeSuccess }: RoleManagem
       switch (status) {
         case RoleUpgradeRequestStatus.PENDING:
           return 'Yêu cầu đang chờ xử lý';
-        case RoleUpgradeRequestStatus.UNDER_REVIEW:
-          return 'Yêu cầu đang được xem xét';
         case RoleUpgradeRequestStatus.APPROVED:
           return 'Yêu cầu đã được phê duyệt';
         case RoleUpgradeRequestStatus.REJECTED:
@@ -93,8 +93,6 @@ export function RoleManagementButton({ userRole, onUpgradeSuccess }: RoleManagem
       switch (status) {
         case RoleUpgradeRequestStatus.PENDING:
           return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-        case RoleUpgradeRequestStatus.UNDER_REVIEW:
-          return 'bg-blue-100 text-blue-800 border-blue-200';
         case RoleUpgradeRequestStatus.APPROVED:
           return 'bg-green-100 text-green-800 border-green-200';
         case RoleUpgradeRequestStatus.REJECTED:
@@ -141,14 +139,27 @@ export function RoleManagementButton({ userRole, onUpgradeSuccess }: RoleManagem
         setReason('');
 
         // Refresh to show the status badge
-        setExistingRequest(response.data);
+        await checkExistingRequest();
         onUpgradeSuccess?.();
       }
     } catch (error) {
-      toast.error('Gửi yêu cầu thất bại', {
-        description: 'Có lỗi xảy ra khi gửi yêu cầu. Vui lòng thử lại.',
-      });
       console.error('Submit request error:', error);
+
+      // Handle specific error cases
+      let errorMessage = 'Có lỗi xảy ra khi gửi yêu cầu. Vui lòng thử lại.';
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { data?: { message?: string } } };
+        if (axiosError.response?.data?.message) {
+          errorMessage = axiosError.response.data.message;
+        }
+      } else if (error && typeof error === 'object' && 'message' in error) {
+        const standardError = error as { message: string };
+        errorMessage = standardError.message;
+      }
+
+      toast.error('Gửi yêu cầu thất bại', {
+        description: errorMessage,
+      });
     } finally {
       setIsLoading(false);
     }

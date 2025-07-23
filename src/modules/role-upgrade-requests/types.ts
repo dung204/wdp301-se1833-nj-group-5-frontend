@@ -8,7 +8,6 @@ export enum RoleUpgradeRequestStatus {
   PENDING = 'PENDING',
   APPROVED = 'APPROVED',
   REJECTED = 'REJECTED',
-  UNDER_REVIEW = 'UNDER_REVIEW',
 }
 
 export enum RequestType {
