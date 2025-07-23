@@ -30,7 +30,7 @@ export function Pagination({ pagination }: { pagination: PaginationType }) {
     if (!pagination.hasNextPage) return;
     const params = new URLSearchParams(window.location.search);
     params.set('page', (pagination.currentPage + 1).toString());
-    router.push(`/properties?${params.toString()}`);
+    router.push(`${pathname}?${params.toString()}`);
   };
 
   const navigateToPage = (page: number) => {

@@ -105,27 +105,29 @@ export function RoomCard({ room }: RoomCardProps) {
             </div>
           </div>
 
-          {/* Availability Info */}
-          <div className="mb-6 grid grid-cols-3 gap-4">
-            <div className="rounded-xl bg-gray-50 p-4 text-center">
-              <div className="text-2xl font-bold text-gray-900">{room.availability.total}</div>
-              <div className="text-sm text-gray-600">Tổng số phòng</div>
-            </div>
-            <div className="rounded-xl bg-orange-50 p-4 text-center">
-              <div className="text-2xl font-bold text-orange-600">{room.availability.booked}</div>
-              <div className="text-sm text-gray-600">Đã đặt</div>
-            </div>
-            <div
-              className={`rounded-xl p-4 text-center ${+room.availability.available === 0 ? 'bg-red-50' : 'bg-green-50'}`}
-            >
-              <div
-                className={`text-2xl font-bold ${+room.availability.available === 0 ? 'text-red-600' : 'text-green-600'}`}
-              >
-                {room.availability.available}
+          {!room.isSoldOut && (
+            <div className="mb-6 grid grid-cols-3 gap-4">
+              <div className="rounded-xl bg-gray-50 p-4 text-center">
+                <div className="text-2xl font-bold text-gray-900">{room.availability.total}</div>
+                <div className="text-sm text-gray-600">Tổng số phòng</div>
               </div>
-              <div className="text-sm text-gray-600">Còn lại</div>
+              <div className="rounded-xl bg-orange-50 p-4 text-center">
+                <div className="text-2xl font-bold text-orange-600">{room.availability.booked}</div>
+                <div className="text-sm text-gray-600">Đã đặt</div>
+              </div>
+              <div
+                className={`rounded-xl p-4 text-center ${+room.availability.available === 0 ? 'bg-red-50' : 'bg-green-50'}`}
+              >
+                <div
+                  className={`text-2xl font-bold ${+room.availability.available === 0 ? 'text-red-600' : 'text-green-600'}`}
+                >
+                  {room.availability.available}
+                </div>
+                <div className="text-sm text-gray-600">Còn lại</div>
+              </div>
             </div>
-          </div>
+          )}
+          {/* Availability Info */}
 
           {/* Booking Button */}
           <div className="flex justify-center">
