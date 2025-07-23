@@ -2,8 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CheckCircle, Clock, Eye, User, XCircle } from 'lucide-react';
-import React from 'react';
-import { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 import { Badge } from '@/base/components/ui/badge';
@@ -133,10 +132,12 @@ export function RoleUpgradeRequestsPage() {
     setIsDetailModalOpen(true);
   };
 
-  const allRequests = requestsData?.data || [];
+  const allRequests = useMemo(() => {
+    return requestsData?.data || [];
+  }, [requestsData?.data]);
 
   // Apply client-side filtering as backup if server-side filtering doesn't work
-  const requests = React.useMemo(() => {
+  const requests = useMemo(() => {
     if (statusFilter === 'all') {
       return allRequests;
     }
@@ -174,7 +175,7 @@ export function RoleUpgradeRequestsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {requests.filter((r) => r.status === RoleUpgradeRequestStatus.PENDING).length}
+              {allRequests.filter((r) => r.status === RoleUpgradeRequestStatus.PENDING).length}
             </div>
           </CardContent>
         </Card>
@@ -186,7 +187,7 @@ export function RoleUpgradeRequestsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {requests.filter((r) => r.status === RoleUpgradeRequestStatus.APPROVED).length}
+              {allRequests.filter((r) => r.status === RoleUpgradeRequestStatus.APPROVED).length}
             </div>
           </CardContent>
         </Card>
@@ -197,8 +198,18 @@ export function RoleUpgradeRequestsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {requests.filter((r) => r.status === RoleUpgradeRequestStatus.REJECTED).length}
+              {allRequests.filter((r) => r.status === RoleUpgradeRequestStatus.REJECTED).length}
             </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Tổng cộng</CardTitle>
+            <User className="text-muted-foreground h-4 w-4" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{allRequests.length}</div>
           </CardContent>
         </Card>
       </div>
