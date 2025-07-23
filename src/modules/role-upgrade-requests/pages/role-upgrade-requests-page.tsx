@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CheckCircle, Clock, Eye, User, XCircle } from 'lucide-react';
+import React from 'react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -51,12 +52,11 @@ export function RoleUpgradeRequestsPage() {
   const queryClient = useQueryClient();
 
   const { data: requestsData, isLoading } = useQuery({
-    queryKey: ['role-upgrade-requests', statusFilter],
+    queryKey: ['role-upgrade-requests'],
     queryFn: () =>
       roleUpgradeRequestService.getAllRequests({
         page: 1,
-        pageSize: 50,
-        ...(statusFilter !== 'all' && { status: statusFilter as RoleUpgradeRequestStatus }),
+        pageSize: 100, // Fetch more data since we're doing client-side filtering
       }),
   });
 
@@ -133,7 +133,15 @@ export function RoleUpgradeRequestsPage() {
     setIsDetailModalOpen(true);
   };
 
-  const requests = requestsData?.data || [];
+  const allRequests = requestsData?.data || [];
+
+  // Apply client-side filtering as backup if server-side filtering doesn't work
+  const requests = React.useMemo(() => {
+    if (statusFilter === 'all') {
+      return allRequests;
+    }
+    return allRequests.filter((request) => request.status === statusFilter);
+  }, [allRequests, statusFilter]);
 
   if (isLoading) {
     return (

@@ -2,7 +2,7 @@
 
 import { Check, ChevronsUpDown } from 'lucide-react';
 import * as React from 'react';
-import { useId, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 
 import { Button } from '@/base/components/ui/button';
 import {
@@ -97,28 +97,45 @@ export function Select({
     return [];
   });
   const [selectedOption, setSelectedOption] = useState<SelectOption | undefined>(() => {
-    if (value && !multiple) {
+    if (value && !multiple && options.length > 0) {
       const selected = options.find((option) => option.value === value);
       return selected;
     }
+    return undefined;
   });
   const [selectedOptions, setSelectedOptions] = useState<SelectOption[]>(() => {
-    if (value && multiple) {
+    if (value && multiple && options.length > 0) {
       const selected = options.filter((option) => (value as string[]).includes(option.value));
       return selected;
     }
-
     return [];
   });
   const [searchTerm, setSearchTerm] = useState('');
 
   const id = useId();
 
+  // Sync internal state with prop values
+  useEffect(() => {
+    if (!multiple) {
+      setSelectedValue(value as string | undefined);
+      const newSelectedOption = value
+        ? options.find((option) => option.value === value)
+        : undefined;
+      setSelectedOption(newSelectedOption);
+    } else {
+      setSelectedValues((value as string[]) || []);
+      const newSelectedOptions = value
+        ? options.filter((option) => (value as string[]).includes(option.value))
+        : [];
+      setSelectedOptions(newSelectedOptions);
+    }
+  }, [value, options, multiple]);
+
   const handleSelect = (currentValue: string) => {
     if (!multiple) {
       const newValue = clearable && currentValue === selectedValue ? undefined : currentValue;
       setSelectedValue(newValue);
-      setSelectedOption(options.find((option) => option.value === newValue));
+      setSelectedOption(newValue ? options.find((option) => option.value === newValue) : undefined);
       onChange?.(newValue);
       setOpen(false);
       return;
