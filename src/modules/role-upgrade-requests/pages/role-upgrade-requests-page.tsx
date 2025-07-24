@@ -65,7 +65,7 @@ export function RoleUpgradeRequestsPage() {
   const updateRequestMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateRoleUpgradeRequestSchema }) =>
       roleUpgradeRequestService.updateRequestStatus(id, data),
-    onSuccess: async (_response, { id, data }) => {
+    onSuccess: async (_response, { id: _id, data: _data }) => {
       queryClient.invalidateQueries({ queryKey: ['role-upgrade-requests'] });
       setIsActionModalOpen(false);
       setSelectedRequest(null);
@@ -73,10 +73,8 @@ export function RoleUpgradeRequestsPage() {
       setRejectionReason('');
       toast.success('Cập nhật trạng thái thành công');
 
-      // If the request was approved, refresh user data for that user
-      if (data.status === RoleUpgradeRequestStatus.APPROVED) {
-        await roleUpgradeRequestService.refreshUserAfterApproval(id);
-      }
+      // Note: User role updates are now handled automatically in the frontend
+      // by the RoleManagementButton component which periodically checks for changes
     },
     onError: (error) => {
       console.error('Error updating role upgrade request:', error);
