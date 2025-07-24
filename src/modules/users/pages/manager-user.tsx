@@ -41,6 +41,9 @@ export function ManagerUsersPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState<'CUSTOMER' | 'HOTEL_OWNER'>('CUSTOMER');
 
+  const [filterName, setFilterName] = useState('');
+  const [filterEmail, setFilterEmail] = useState('');
+  const [filterRole, setFilterRole] = useState('');
   const { updateUser, deleteUser } = useUserMutations({
     onUpdateSuccess: () => setRoleDialogOpen(false),
     onDeleteSuccess: () => {
@@ -63,6 +66,14 @@ export function ManagerUsersPage() {
     }
   };
 
+  const filterUser = users.filter((user) => {
+    const matchName = (user.fullName || '').toLowerCase().includes(filterName.toLowerCase());
+    const matchEmail = user.email.toLowerCase().includes(filterEmail.toLowerCase());
+    const matchRole = filterRole ? user.role === filterRole : true;
+
+    return matchName && matchEmail && matchRole;
+  });
+
   return (
     <div className="mx-auto space-y-6 p-6">
       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
@@ -79,6 +90,32 @@ export function ManagerUsersPage() {
           <Trash2 className="mr-2 h-4 w-4" />
           Danh sách xóa
         </Button>
+      </div>
+      {/* Bộ lọc */}
+      <div className="mb-4 flex flex-wrap gap-4">
+        <input
+          type="text"
+          placeholder="Tìm theo tên"
+          value={filterName}
+          onChange={(e) => setFilterName(e.target.value)}
+          className="rounded border px-3 py-2 text-sm"
+        />
+        <input
+          type="text"
+          placeholder="Tìm theo email"
+          value={filterEmail}
+          onChange={(e) => setFilterEmail(e.target.value)}
+          className="rounded border px-3 py-2 text-sm"
+        />
+        <select
+          value={filterRole}
+          onChange={(e) => setFilterRole(e.target.value)}
+          className="rounded border px-3 py-2 text-sm"
+        >
+          <option value="">Tất cả vai trò</option>
+          <option value="CUSTOMER">Khách hàng</option>
+          <option value="HOTEL_OWNER">Chủ khách sạn</option>
+        </select>
       </div>
       <Card>
         <CardHeader>
@@ -112,7 +149,7 @@ export function ManagerUsersPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users.map((user) => (
+              {filterUser?.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell>
                     <div className="text-gray-600">

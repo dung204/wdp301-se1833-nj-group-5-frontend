@@ -7,6 +7,8 @@ import { PaymentMethod } from '@/modules/payments';
 import { roomSchema } from '@/modules/rooms';
 import { userSchema } from '@/modules/users';
 
+import { BookingUtils } from './utils/booking.utils';
+
 export enum BookingStatus {
   CONFIRMED = 'CONFIRMED',
   COMPLETED = 'COMPLETED',
@@ -48,8 +50,18 @@ export const bookingsSearchParamsSchema = commonSearchParamsSchema.extend({
   cancelPolicy: z.nativeEnum(CancelPolicy).optional(),
   checkIn: z.string().optional(),
   checkOut: z.string().optional(),
-  minPrice: z.string().optional(),
-  maxPrice: z.string().optional(),
+  minPrice: z.coerce
+    .number()
+    .nonnegative()
+    .optional()
+    .catch(BookingUtils.DEFAULT_MIN_PRICE)
+    .default(BookingUtils.DEFAULT_MIN_PRICE),
+  maxPrice: z.coerce
+    .number()
+    .nonnegative()
+    .optional()
+    .catch(BookingUtils.DEFAULT_MAX_PRICE)
+    .default(BookingUtils.DEFAULT_MAX_PRICE),
   quantity: z.string().optional(),
   minOccupancy: z.string().optional(),
   hotelOwnerId: z.string().optional(),

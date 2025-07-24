@@ -423,7 +423,7 @@ export function ManagerHotelsPage({ searchParams }: ManagerHotelsPageProps) {
                         <div className="flex items-center text-gray-600">
                           <Clock className="mr-1 h-4 w-4" />
                           <span className="text-sm">
-                            {DateTimeUtils.formatTime(hotel.checkoutTime)}
+                            {DateTimeUtils.formatTime(new Date(hotel.checkoutTime))}
                           </span>
                         </div>
                       </TableCell>
@@ -723,7 +723,7 @@ function HotelDetailsDialog({ hotel, ...props }: HotelDetailsDialogProps) {
                     <div>
                       <Label className="text-sm font-medium text-gray-600">Check-out</Label>
                       <p className="font-semibold text-orange-700">
-                        {DateTimeUtils.formatTime(hotel.checkoutTime)}
+                        {DateTimeUtils.formatTime(new Date(hotel.checkoutTime))}
                       </p>
                     </div>
                     <Clock className="h-5 w-5 text-orange-600" />

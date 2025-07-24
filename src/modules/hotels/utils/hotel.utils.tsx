@@ -6,7 +6,7 @@ import { Hotel, ManagerHotelSearchParams } from '../types';
 
 export class HotelUtils {
   static DEFAULT_MIN_PRICE = 0;
-  static DEFAULT_MAX_PRICE = 5_000_000;
+  static DEFAULT_MAX_PRICE = 500_000_000;
 
   static getHotelsByAdminAsyncSelectOptions(
     searchBy: Exclude<keyof ManagerHotelSearchParams, keyof CommonSearchParams | 'sorting'>,

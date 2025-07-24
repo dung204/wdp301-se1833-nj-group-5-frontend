@@ -69,6 +69,8 @@ export type HotelSearchParams = Partial<z.infer<typeof hotelSearchParamsSchema>>
 export const hotelSchema = baseEntitySchema.extend({
   name: z.string(),
   address: z.string(),
+  commune: z.string(),
+  province: z.string(),
   description: z.string(),
   owner: userSchema,
   phoneNumber: z.string(),

@@ -3,7 +3,6 @@ import { Metadata } from 'next';
 import { HotelSearchBox } from '@/modules/hotels';
 import { Destination } from '@/modules/users/pages/home/destinations/page';
 import { Discount } from '@/modules/users/pages/home/discount/page';
-import { Famous } from '@/modules/users/pages/home/famous/page';
 
 export const metadata: Metadata = {
   title: 'Trang chủ',
@@ -17,7 +16,6 @@ export default function UserHomePage() {
         <div className="w-full max-w-7xl">
           <Destination />
           <Discount />
-          <Famous />
         </div>
       </div>
     </div>
