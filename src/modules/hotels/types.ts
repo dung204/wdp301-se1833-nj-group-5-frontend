@@ -89,10 +89,22 @@ export const hotelSchema = baseEntitySchema.extend({
 export type Hotel = z.infer<typeof hotelSchema>;
 
 export const createHotelSchema = z.object({
-  name: z.string().trim().nonempty('Tên khách sạn không được để trống'),
+  name: z
+    .string()
+    .trim()
+    .nonempty('Tên khách sạn không được để trống')
+    .regex(/^[\p{L}\p{N}\s.,'-]+$/u, 'Tên khách sạn không được chứa ký tự đặc biệt'),
   province: z.string().trim().nonempty('Vui lòng chọn tỉnh/thành phố'),
-  commune: z.string().trim().nonempty('Vui lòng chọn xã/phường'),
-  address: z.string().trim().nonempty('Địa chỉ không được để trống'),
+  commune: z
+    .string()
+    .trim()
+    .nonempty('Vui lòng chọn xã/phường')
+    .regex(/^[\p{L}\p{N}\s.,'-]+$/u, 'Địa chỉ không được chứa ký tự đặc biệt'),
+  address: z
+    .string()
+    .trim()
+    .nonempty('Địa chỉ không được để trống')
+    .regex(/^[\p{L}\p{N}\s.,'-]+$/u, 'Tên khách sạn không được chứa ký tự đặc biệt'),
   description: z.string().trim().nonempty('Mô tả không được để trống'),
   phoneNumber: z
     .string()

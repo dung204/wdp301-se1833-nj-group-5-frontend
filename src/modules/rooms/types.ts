@@ -53,7 +53,11 @@ export const roomSchema = baseEntitySchema.extend({
 export type Room = z.infer<typeof roomSchema>;
 
 export const createRoomSchema = z.object({
-  name: z.string().trim().nonempty('Tên phòng không được để trống'),
+  name: z
+    .string()
+    .trim()
+    .nonempty('Tên phòng không được để trống')
+    .regex(/^[\p{L}\p{N}\s.,'-]+$/u, 'Tên phòng không được chứa ký tự đặc biệt'),
   hotel: z.string().nonempty('Vui lòng chọn 1 khách sạn'),
   rate: z.coerce.number().min(100000, 'Giá phòng tối thiểu là 100.000đ'),
   size: z.coerce.number().min(1, 'Diện tích phải là số dương'),
