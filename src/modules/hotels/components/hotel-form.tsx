@@ -1,9 +1,10 @@
 'use client';
 
-import { ComponentProps, useRef } from 'react';
+import { ComponentProps, useEffect, useRef, useState } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 
 import { Form } from '@/base/components/ui/form';
+import { Select } from '@/base/components/ui/select';
 
 import { useAddressData } from '../hooks/use-address-data';
 import { cancelPolicies, createHotelSchema } from '../types';
@@ -15,6 +16,36 @@ export function HotelForm(props: HotelFormProps) {
     useAddressData();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const formRef = useRef<UseFormReturn<any>>(null);
+
+  // Controlled state for select values (codes for display, names for form)
+  const [selectedProvinceCode, setSelectedProvinceCode] = useState<string>('');
+  const [selectedCommuneCode, setSelectedCommuneCode] = useState<string>('');
+
+  // Initialize province and commune codes based on form default values
+  useEffect(() => {
+    if (props.defaultValues && provinces.length > 0) {
+      const provinceName = props.defaultValues.province;
+      if (provinceName) {
+        const province = provinces.find((p) => p.name === provinceName);
+        if (province) {
+          setSelectedProvinceCode(province.code);
+          fetchCommunes(province.code);
+        }
+      }
+    }
+  }, [provinces, props.defaultValues, fetchCommunes]);
+
+  useEffect(() => {
+    if (props.defaultValues && communes.length > 0) {
+      const communeName = props.defaultValues.commune;
+      if (communeName) {
+        const commune = communes.find((c) => c.name === communeName);
+        if (commune) {
+          setSelectedCommuneCode(commune.code);
+        }
+      }
+    }
+  }, [communes, props.defaultValues]);
 
   return (
     <Form
@@ -31,64 +62,98 @@ export function HotelForm(props: HotelFormProps) {
           name: 'province',
           type: 'select',
           label: 'Tỉnh/Thành phố',
-          placeholder: loadingProvinces ? 'Đang tải...' : '-- Chọn tỉnh/thành --',
-          clearable: false,
-          searchable: true,
-          disabled: loadingProvinces,
-          options: provinces.map((province) => ({
-            value: province.code,
-            label: province.name,
-          })),
-          onChange: (value: string | string[]) => {
-            if (typeof value === 'string') {
-              // Find the selected province to get its name
-              const selectedProvince = provinces.find((p) => p.code === value);
+          async: false,
+          options: [], // Empty array since we handle options in render
+          render: ({ Label, Description, Message }) => (
+            <>
+              <Label />
+              <Select
+                value={selectedProvinceCode} // Use controlled value (code)
+                options={provinces.map((province) => ({
+                  value: province.code,
+                  label: province.name,
+                }))}
+                placeholder={loadingProvinces ? 'Đang tải...' : '-- Chọn tỉnh/thành --'}
+                clearable={false}
+                searchable={true}
+                disabled={loadingProvinces}
+                onChange={(value: string | undefined) => {
+                  if (typeof value === 'string') {
+                    // Update controlled state
+                    setSelectedProvinceCode(value);
 
-              // Store the province name in the form instead of the code
-              if (selectedProvince && formRef.current) {
-                formRef.current.setValue('province', selectedProvince.name, {
-                  shouldDirty: true,
-                  shouldTouch: true,
-                  shouldValidate: true,
-                });
-              }
+                    // Find the selected province to get its name
+                    const selectedProvince = provinces.find((p) => p.code === value);
 
-              clearCommunes();
-              fetchCommunes(value);
-            }
-          },
+                    // Store the province name in the form (backend expects names)
+                    if (selectedProvince && formRef.current) {
+                      formRef.current.setValue('province', selectedProvince.name, {
+                        shouldDirty: true,
+                        shouldTouch: true,
+                        shouldValidate: true,
+                      });
+                    }
+
+                    // Clear commune selection and fetch new communes
+                    setSelectedCommuneCode('');
+                    clearCommunes();
+                    fetchCommunes(value);
+                  }
+                }}
+              />
+              <Description />
+              <Message />
+            </>
+          ),
         },
         {
           name: 'commune',
           type: 'select',
           label: 'Xã/Phường',
-          placeholder: loadingCommunes
-            ? 'Đang tải...'
-            : communes.length === 0
-              ? '-- Chọn tỉnh/thành trước --'
-              : '-- Chọn xã/phường --',
-          clearable: false,
-          searchable: true,
-          disabled: loadingCommunes,
-          options: communes.map((commune) => ({
-            value: commune.code,
-            label: commune.name,
-          })),
-          onChange: (value: string | string[]) => {
-            if (typeof value === 'string') {
-              // Find the selected commune to get its name
-              const selectedCommune = communes.find((c) => c.code === value);
+          async: false,
+          options: [], // Empty array since we handle options in render
+          render: ({ Label, Description, Message }) => (
+            <>
+              <Label />
+              <Select
+                value={selectedCommuneCode} // Use controlled value (code)
+                options={communes.map((commune) => ({
+                  value: commune.code,
+                  label: commune.name,
+                }))}
+                placeholder={
+                  loadingCommunes
+                    ? 'Đang tải...'
+                    : communes.length === 0
+                      ? '-- Chọn tỉnh/thành trước --'
+                      : '-- Chọn xã/phường --'
+                }
+                clearable={false}
+                searchable={true}
+                disabled={loadingCommunes}
+                onChange={(value: string | undefined) => {
+                  if (typeof value === 'string') {
+                    // Update controlled state
+                    setSelectedCommuneCode(value);
 
-              // Store the commune name in the form instead of the code
-              if (selectedCommune && formRef.current) {
-                formRef.current.setValue('commune', selectedCommune.name, {
-                  shouldDirty: true,
-                  shouldTouch: true,
-                  shouldValidate: true,
-                });
-              }
-            }
-          },
+                    // Find the selected commune to get its name
+                    const selectedCommune = communes.find((c) => c.code === value);
+
+                    // Store the commune name in the form (backend expects names)
+                    if (selectedCommune && formRef.current) {
+                      formRef.current.setValue('commune', selectedCommune.name, {
+                        shouldDirty: true,
+                        shouldTouch: true,
+                        shouldValidate: true,
+                      });
+                    }
+                  }
+                }}
+              />
+              <Description />
+              <Message />
+            </>
+          ),
         },
         {
           name: 'address',
