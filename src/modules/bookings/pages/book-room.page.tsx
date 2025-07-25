@@ -5,7 +5,7 @@ import axios from 'axios';
 import { ArrowRightIcon, DoorOpenIcon, MailIcon, OctagonX, UserRoundIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ComponentProps, useState } from 'react';
+import { ComponentProps, Suspense, useState } from 'react';
 
 import {
   AlertDialog,
@@ -35,8 +35,9 @@ interface BookRoomPageProps {
 
 export function BookRoomPage({ currentBooking }: BookRoomPageProps) {
   const router = useRouter();
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(PaymentMethod.COD);
   const queryClient = useQueryClient();
+
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(PaymentMethod.COD);
 
   const { mutate: triggerCreateBooking, isPending: isCreatingBooking } = useMutation({
     mutationFn: () =>
@@ -132,7 +133,9 @@ export function BookRoomPage({ currentBooking }: BookRoomPageProps) {
         <div className="col-span-1 flex flex-col gap-6">
           <CheckInCheckOutCard currentBooking={currentBooking} />
           <HotelAndRoomInfoCard currentBooking={currentBooking} />
-          <DiscountsCard currentBooking={currentBooking} />
+          <Suspense>
+            <DiscountsCard currentBooking={currentBooking} />
+          </Suspense>
           <TotalPriceCard currentBooking={currentBooking} />
         </div>
       </section>
@@ -151,6 +154,8 @@ export function BookRoomSuccessPage({ bookingId, orderCode }: BookRoomSuccessPag
     data: { data: bookings },
   } = useSuspenseQuery({
     queryKey: ['bookings', 'all', { id: bookingId }],
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     queryFn: () => bookingsService.getAllBookings({ id: bookingId }),
     refetchOnWindowFocus: false,
   });

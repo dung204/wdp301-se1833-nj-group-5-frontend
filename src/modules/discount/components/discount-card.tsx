@@ -1,5 +1,6 @@
 import { Badge } from '@/base/components/ui/badge';
 import { Card, CardContent } from '@/base/components/ui/card';
+import { Checkbox } from '@/base/components/ui/checkbox';
 import { Skeleton } from '@/base/components/ui/skeleton';
 import { cn } from '@/base/lib';
 import { StringUtils } from '@/base/utils';
@@ -9,9 +10,18 @@ import { Discount } from '../types';
 type DiscountCardProps = {
   discount: Discount;
   className?: string;
+  withCheckbox?: boolean;
+  checked?: boolean;
+  onCheckChange?: (checked: boolean) => void;
 };
 
-export function DiscountCard({ discount, className }: DiscountCardProps) {
+export function DiscountCard({
+  discount,
+  checked,
+  className,
+  withCheckbox,
+  onCheckChange,
+}: DiscountCardProps) {
   return (
     <Card
       className={cn(
@@ -25,17 +35,28 @@ export function DiscountCard({ discount, className }: DiscountCardProps) {
             -{discount.amount}%
           </Badge>
         </div>
-        <div className="relative h-30 overflow-hidden bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500"></div>
+        <div className="relative h-full min-h-30 overflow-hidden bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500"></div>
       </div>
 
-      <CardContent className="col-span-2 space-y-2 py-4">
-        <h3 className="line-clamp-1 text-lg font-semibold">{discount.title}</h3>
-        <p className="text-muted-foreground line-clamp-1 text-sm">
-          Hạn sử dụng: {StringUtils.formatDate(discount.expiredTimestamp)}
-        </p>
-        <p className="text-muted-foreground line-clamp-1 text-sm">
-          Số lượng còn lại: {discount.usageCount}
-        </p>
+      <CardContent className="col-span-2 flex items-center gap-4 py-4">
+        <div className="grow space-y-2">
+          <h3 className="line-clamp-1 text-lg font-semibold">{discount.title}</h3>
+          <p className="text-muted-foreground line-clamp-1 text-sm">
+            Hạn sử dụng: {StringUtils.formatDate(discount.expiredTimestamp)}
+          </p>
+          <p className="text-muted-foreground line-clamp-1 text-sm">
+            Số lượng còn lại: {discount.usageCount}
+          </p>
+        </div>
+        {withCheckbox && (
+          <div className="col-span-1 flex items-center justify-center">
+            <Checkbox
+              checked={checked}
+              onCheckedChange={(checked) => onCheckChange?.(checked === true)}
+              className="cursor-pointer"
+            />
+          </div>
+        )}
       </CardContent>
     </Card>
   );
