@@ -40,9 +40,9 @@ export function RegisterForm({ onRegisterSuccess, onStepChange }: RegisterFormPr
         },
       });
 
-      router.replace('/');
-      onRegisterSuccess?.();
-      onStepChange?.(3);
+      // Move to step 2 to collect additional info instead of navigating to homepage
+      setStep(2);
+      onStepChange?.(2);
     },
   });
 
@@ -52,7 +52,12 @@ export function RegisterForm({ onRegisterSuccess, onStepChange }: RegisterFormPr
     isPending: step2Loading,
   } = useMutation({
     mutationFn: (payload: UpdateUserSchema) => userService.updateUserProfile(payload),
-    onSuccess: async () => onRegisterSuccess?.(),
+    onSuccess: async () => {
+      // Navigate to homepage after completing profile setup
+      router.replace('/');
+      onRegisterSuccess?.();
+      onStepChange?.(3);
+    },
   });
 
   switch (step) {
@@ -63,8 +68,6 @@ export function RegisterForm({ onRegisterSuccess, onStepChange }: RegisterFormPr
           error={step1Error}
           onStepComplete={({ email, password }) => {
             triggerRegister({ email, password });
-            setStep(2);
-            onStepChange?.(2);
           }}
         />
       );
