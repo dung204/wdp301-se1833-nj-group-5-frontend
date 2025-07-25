@@ -54,12 +54,23 @@ export function RoleUpgradeRequestsPage() {
 
   const { data: requestsData, isLoading } = useQuery({
     queryKey: ['role-upgrade-requests', statusFilter, currentPage, pageSize],
-    queryFn: () =>
-      roleUpgradeRequestService.getAllRequests({
+    queryFn: () => {
+      const params: {
+        page: number;
+        pageSize: number;
+        status?: RoleUpgradeRequestStatus;
+      } = {
         page: currentPage,
         pageSize,
-        ...(statusFilter !== 'all' && { status: statusFilter as RoleUpgradeRequestStatus }),
-      }),
+      };
+
+      // Only add status filter if it's not 'all'
+      if (statusFilter !== 'all') {
+        params.status = statusFilter as RoleUpgradeRequestStatus;
+      }
+
+      return roleUpgradeRequestService.getAllRequests(params);
+    },
   });
 
   const updateRequestMutation = useMutation({
@@ -228,7 +239,7 @@ export function RoleUpgradeRequestsPage() {
             { value: RoleUpgradeRequestStatus.REJECTED, label: 'Đã từ chối' },
           ]}
           value={statusFilter}
-          onChange={(value) => {
+          onChange={(value: string | undefined) => {
             setStatusFilter(value || 'all');
             setCurrentPage(1); // Reset to first page when filter changes
           }}
