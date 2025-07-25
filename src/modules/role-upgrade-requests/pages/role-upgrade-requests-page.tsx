@@ -49,9 +49,7 @@ export function RoleUpgradeRequestsPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(10);
-
   const queryClient = useQueryClient();
-
   const { data: requestsData, isLoading } = useQuery({
     queryKey: ['role-upgrade-requests', statusFilter, currentPage, pageSize],
     queryFn: () => {
@@ -63,16 +61,13 @@ export function RoleUpgradeRequestsPage() {
         page: currentPage,
         pageSize,
       };
-
       // Only add status filter if it's not 'all'
       if (statusFilter !== 'all') {
         params.status = statusFilter as RoleUpgradeRequestStatus;
       }
-
       return roleUpgradeRequestService.getAllRequests(params);
     },
   });
-
   const updateRequestMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateRoleUpgradeRequestSchema }) =>
       roleUpgradeRequestService.updateRequestStatus(id, data),
@@ -83,7 +78,6 @@ export function RoleUpgradeRequestsPage() {
       setAdminNotes('');
       setRejectionReason('');
       toast.success('Cập nhật trạng thái thành công');
-
       // Note: User role updates are now handled automatically in the frontend
       // by the RoleManagementButton component which periodically checks for changes
     },
@@ -94,69 +88,89 @@ export function RoleUpgradeRequestsPage() {
       });
     },
   });
-
   const getStatusBadge = (status: RoleUpgradeRequestStatus) => {
     const variants = {
       [RoleUpgradeRequestStatus.PENDING]: 'bg-yellow-100 text-yellow-800 border-yellow-200',
       [RoleUpgradeRequestStatus.APPROVED]: 'bg-green-100 text-green-800 border-green-200',
       [RoleUpgradeRequestStatus.REJECTED]: 'bg-red-100 text-red-800 border-red-200',
     };
-
     const text = {
       [RoleUpgradeRequestStatus.PENDING]: 'Chờ xử lý',
       [RoleUpgradeRequestStatus.APPROVED]: 'Đã phê duyệt',
       [RoleUpgradeRequestStatus.REJECTED]: 'Đã từ chối',
     };
-
     return (
       <Badge className={`${variants[status]} hover:${variants[status]}`}>{text[status]}</Badge>
     );
   };
-
   const handleAction = (request: RoleUpgradeRequest, action: 'approve' | 'reject') => {
     setSelectedRequest(request);
     setActionType(action);
     setIsActionModalOpen(true);
   };
-
   const handleSubmitAction = () => {
     if (!selectedRequest) return;
-
     const statusMap: Record<'approve' | 'reject', RoleUpgradeRequestStatus> = {
       approve: RoleUpgradeRequestStatus.APPROVED,
       reject: RoleUpgradeRequestStatus.REJECTED,
     };
-
     const updateData: UpdateRoleUpgradeRequestSchema = {
       status: statusMap[actionType],
       adminNotes: adminNotes.trim() || undefined,
       rejectionReason: actionType === 'reject' ? rejectionReason.trim() || undefined : undefined,
     };
-
     updateRequestMutation.mutate({
       id: selectedRequest.id,
       data: updateData,
     });
   };
-
   const handleViewDetails = (request: RoleUpgradeRequest) => {
     setSelectedRequest(request);
     setIsDetailModalOpen(true);
   };
-
   const requests = requestsData?.data || [];
   const pagination = requestsData?.metadata?.pagination;
-
   // For statistics, we need all data regardless of current page/filter
-  const { data: allRequestsData } = useQuery({
+  const {
+    data: allRequestsData,
+    isLoading: _isLoadingAll,
+    error: _allRequestsError,
+  } = useQuery({
     queryKey: ['role-upgrade-requests-all'],
-    queryFn: () =>
-      roleUpgradeRequestService.getAllRequests({
+    queryFn: async () => {
+      // First, get the first page to know total count
+      const firstPage = await roleUpgradeRequestService.getAllRequests({
         page: 1,
-        pageSize: 1000, // Get all data for statistics
-      }),
-  });
+        pageSize: 100,
+      });
 
+      const totalCount = firstPage.metadata?.pagination?.total || 0;
+      const totalPages = Math.ceil(totalCount / 100);
+
+      // If we have more than 100 records, fetch all pages
+      if (totalPages > 1) {
+        const allPages = [firstPage];
+
+        // Fetch remaining pages
+        for (let page = 2; page <= totalPages; page++) {
+          const pageData = await roleUpgradeRequestService.getAllRequests({
+            page,
+            pageSize: 100,
+          });
+          allPages.push(pageData);
+        }
+
+        // Combine all data
+        const allData = allPages.flatMap((pageData) => pageData.data || []);
+        return {
+          data: allData,
+          metadata: firstPage.metadata,
+        };
+      }
+
+      return firstPage;
+    },
+  });
   const allRequests = allRequestsData?.data || [];
 
   if (isLoading) {
@@ -169,7 +183,6 @@ export function RoleUpgradeRequestsPage() {
       </div>
     );
   }
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -180,7 +193,6 @@ export function RoleUpgradeRequestsPage() {
           </p>
         </div>
       </div>
-
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         <Card>
@@ -194,7 +206,6 @@ export function RoleUpgradeRequestsPage() {
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Đã phê duyệt</CardTitle>
@@ -217,7 +228,6 @@ export function RoleUpgradeRequestsPage() {
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Tổng cộng</CardTitle>
@@ -228,7 +238,6 @@ export function RoleUpgradeRequestsPage() {
           </CardContent>
         </Card>
       </div>
-
       {/* Filter */}
       <div className="flex gap-4">
         <Select
@@ -247,7 +256,6 @@ export function RoleUpgradeRequestsPage() {
           triggerClassName="w-48"
         />
       </div>
-
       {/* Requests Table */}
       <Card>
         <CardHeader>
@@ -322,13 +330,11 @@ export function RoleUpgradeRequestsPage() {
               ))}
             </TableBody>
           </Table>
-
           {requests.length === 0 && (
             <div className="text-muted-foreground py-8 text-center">Không có yêu cầu nào</div>
           )}
         </CardContent>
       </Card>
-
       {/* Pagination */}
       {pagination && pagination.totalPage > 1 && (
         <div className="flex items-center justify-between">
@@ -345,12 +351,10 @@ export function RoleUpgradeRequestsPage() {
             >
               Previous
             </Button>
-
             <div className="flex items-center space-x-1">
               {Array.from({ length: Math.min(5, pagination.totalPage) }, (_, i) => {
                 const page = Math.max(1, Math.min(pagination.totalPage - 4, currentPage - 2)) + i;
                 if (page > pagination.totalPage) return null;
-
                 return (
                   <Button
                     key={page}
@@ -363,7 +367,6 @@ export function RoleUpgradeRequestsPage() {
                 );
               })}
             </div>
-
             <Button
               variant="outline"
               size="sm"
@@ -375,7 +378,6 @@ export function RoleUpgradeRequestsPage() {
           </div>
         </div>
       )}
-
       {/* Detail Modal */}
       <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
         <DialogContent className="max-w-2xl">
@@ -442,7 +444,6 @@ export function RoleUpgradeRequestsPage() {
           )}
         </DialogContent>
       </Dialog>
-
       {/* Action Modal */}
       <Dialog open={isActionModalOpen} onOpenChange={setIsActionModalOpen}>
         <DialogContent>
