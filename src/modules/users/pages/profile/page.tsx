@@ -76,12 +76,13 @@ export function UserProfile() {
     { label: 'Đăng ký nhận thư điện tử', active: false },
   ];
   const handleSave = async () => {
-    if (!user?.id) return;
     try {
-      await userService.updateUser(user.id)({ fullName });
+      await userService.updateUserProfile({ fullName });
       setIsEditing(false);
+      toast.success('Cập nhật tên thành công!');
     } catch (error) {
       console.error('Lỗi cập nhật tên người dùng:', error);
+      toast.error('Cập nhật tên thất bại. Vui lòng thử lại.');
     }
   };
   const handleChangePassword = async () => {
