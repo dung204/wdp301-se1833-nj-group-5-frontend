@@ -25,6 +25,8 @@ export const managerHotelSearchParamsSchema = commonSearchParamsSchema.extend({
   address: z.string().trim().optional(),
   minRating: z.coerce.number().int().min(0).max(5).optional().catch(undefined),
   maxRating: z.coerce.number().int().min(0).max(5).optional().catch(undefined),
+  checkIn: z.string().optional(),
+  checkOut: z.string().optional(),
   minPrice: z.coerce
     .number()
     .nonnegative()
@@ -84,6 +86,11 @@ export const hotelSchema = baseEntitySchema.extend({
   rating: z.number(),
   services: z.array(z.string()),
   cancelPolicy: z.nativeEnum(CancelPolicy),
+  rooms: z.object({
+    totalRooms: z.number().min(0),
+    bookedRooms: z.number().min(0),
+    availableRooms: z.number().min(0),
+  }),
 });
 
 export type Hotel = z.infer<typeof hotelSchema>;
