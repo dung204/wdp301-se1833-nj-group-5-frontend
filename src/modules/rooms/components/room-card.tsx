@@ -8,6 +8,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Badge } from '@/base/components/ui/badge';
 import { Button } from '@/base/components/ui/button';
 import { Card } from '@/base/components/ui/card';
+import { Skeleton } from '@/base/components/ui/skeleton';
 import { createBookingSchema } from '@/modules/bookings';
 
 import { Room } from '../types';
@@ -143,6 +144,79 @@ export function RoomCard({ room }: RoomCardProps) {
               <CreditCard className="mr-2 h-5 w-5" />
               {room.isSoldOut ? 'Hết phòng' : 'Đặt phòng ngay'}
             </Button>
+          </div>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+export function RoomCardSkeleton() {
+  return (
+    <Card className="group overflow-hidden border-0 bg-white/80 p-0 backdrop-blur-sm duration-300">
+      <div className="lg:flex">
+        {/* Room Image */}
+        <div className="relative h-64 overflow-hidden lg:h-auto lg:w-96">
+          <Skeleton className="size-full rounded-r-none" />
+        </div>
+
+        {/* Room Details */}
+        <div className="flex-1 p-8">
+          <div className="mb-6 flex items-start justify-between">
+            <div className="flex-1">
+              <h3 className="mb-2 text-2xl font-bold text-gray-900">
+                <Skeleton className="h-[1lh] w-3/4" />
+              </h3>
+              <div className="mb-4 flex items-center gap-4 text-gray-600">
+                <div className="flex items-center gap-1">
+                  <span className="text-sm">
+                    <Skeleton className="h-[1lh] w-[5ch]" />
+                  </span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="text-sm">
+                    <Skeleton className="h-[1lh] w-[15ch]" />
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="text-right">
+              <div className="mb-1 text-3xl font-bold text-blue-600">
+                <Skeleton className="h-[1lh] w-[8ch]" />
+              </div>
+              <div className="text-sm text-gray-500">
+                <Skeleton className="h-[1lh] w-[5ch]" />
+              </div>
+            </div>
+          </div>
+
+          {/* Room Amenities */}
+          <div className="mb-6">
+            <h4 className="mb-3 text-lg font-semibold text-gray-900">
+              <Skeleton className="h-[1lh] w-[10ch]" />
+            </h4>
+            <div className="flex flex-wrap gap-2">
+              <Skeleton className="h-6 w-20" />
+            </div>
+          </div>
+
+          <div className="mb-6 grid grid-cols-3 gap-4">
+            <div className="h-20">
+              <Skeleton className="size-full" />
+            </div>
+            <div className="h-20">
+              <Skeleton className="size-full" />
+            </div>
+            <div className="h-20">
+              <Skeleton className="size-full" />
+            </div>
+          </div>
+          {/* Availability Info */}
+
+          {/* Booking Button */}
+          <div className="flex justify-center">
+            <Skeleton className="h-12 w-32" />
           </div>
         </div>
       </div>

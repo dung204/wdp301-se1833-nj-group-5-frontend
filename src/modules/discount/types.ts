@@ -1,30 +1,63 @@
 import { z } from 'zod';
 
+import { baseEntitySchema, commonSearchParamsSchema } from '@/base/types';
+import { hotelSchema } from '@/modules/hotels';
+
+export enum DiscountState {
+  ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE',
+}
+
+export const discountStates = {
+  [DiscountState.ACTIVE]: 'Đang hoạt động',
+  [DiscountState.INACTIVE]: 'Không hoạt động',
+};
+
+export enum DiscountType {
+  PERCENTAGE = 'PERCENTAGE',
+  FIXED = 'FIXED',
+}
+
+export const discountsSearchParamsSchema = commonSearchParamsSchema.extend({
+  id: z.string().optional(),
+  minAmount: z.coerce.number().optional(),
+  state: z.nativeEnum(DiscountState).optional(),
+  hotelId: z.string().optional(),
+});
+
+export type DiscountsSearchParams = z.infer<typeof discountsSearchParamsSchema>;
+
+export const discountSchema = baseEntitySchema.extend({
+  title: z.string(),
+  amount: z.number(),
+  expiredTimestamp: z.string(),
+  maxQuantityPerUser: z.number(),
+  applicableHotels: z.array(hotelSchema),
+  usageCount: z.number(),
+  state: z.nativeEnum(DiscountState),
+});
+
+export type Discount = z.infer<typeof discountSchema>;
+
 export const createDiscountSchema = z.object({
-  amount: z.preprocess(
-    (val) => Number(val),
-    z.number().min(5, 'Amount must be a non-negative number and >= 5%'),
-  ),
-  maxQualityPerUser: z.preprocess(
-    (val) => Number(val),
-    z.number().min(0, 'Max quantity must be a non-negative number'),
-  ),
-  usageCount: z.preprocess(
-    (val) => Number(val),
-    z.number().min(0, 'Usage count must be a non-negative number'),
-  ),
-  applicableHotels: z
-    .array(z.string().trim().uuid('Each hotel ID must be a valid UUID'))
-    .min(1, 'Phải chọn ít nhất 1 khách sạn'), // Thêm .min(1, ...)
-  expiredTimestamp: z.coerce.date().refine(
-    (date) => {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      return date >= today;
-    },
-    { message: 'Ngày hết hạn phải lớn hơn hoặc bằng ngày hiện tại' },
-  ),
-  state: z.enum(['ACTIVE', 'INACTIVE']),
+  title: z.string().nonempty('Tiêu đề mã giảm giá không được để trống'),
+  amount: z.coerce
+    .number()
+    .min(5, 'Phần trăm giảm giá phải có tối thiểu 5 và tối đa là 100')
+    .max(100, 'Phần trăm giảm giá phải có tối thiểu 5 và tối đa là 100'),
+  maxQuantityPerUser: z.coerce
+    .number()
+    .int()
+    .min(1, 'Số lượt tối đa/người phải là số nguyên tối thiểu bằng 1'),
+  expiredTimestamp: z
+    .date({ message: 'Thời gian hết hạn không được để trống' })
+    .min(new Date(), 'Thời gian hết hạn phải là thời điểm trong tương lai'),
+  usageCount: z.coerce
+    .number()
+    .int()
+    .min(1, 'Tổng số lượt sử dụng phải là số nguyên tối thiểu bằng 1'),
+  applicableHotels: z.array(z.string().uuid()).min(1, 'Vui lòng chọn tối thiểu 1 khách sạn'),
+  state: z.nativeEnum(DiscountState),
 });
 
 export type CreateDiscountSchema = z.infer<typeof createDiscountSchema>;

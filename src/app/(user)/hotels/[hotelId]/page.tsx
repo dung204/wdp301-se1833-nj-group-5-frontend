@@ -11,7 +11,9 @@ type PageProps = {
 export default async function Page({ searchParams, params }: PageProps) {
   const awaitedSearchParams = await searchParams;
   const { hotelId } = await params;
-  const validatedSearchParams = roomSearchParamsSchema.parse(awaitedSearchParams);
+  const validatedSearchParams = roomSearchParamsSchema
+    .omit({ page: true, pageSize: true })
+    .parse(awaitedSearchParams);
   return (
     // HydrationBoundary: các data đã fetch được sẽ được dehydrate
     <Suspense

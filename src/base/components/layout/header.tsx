@@ -32,11 +32,6 @@ export async function Header() {
               Khách sạn
             </Button>
           </Link>
-          <Link href="/discounts">
-            <Button variant="link" className="relative">
-              Phiếu giảm giá và ưu đãi
-            </Button>
-          </Link>
         </nav>
 
         <div className="flex items-center gap-2">

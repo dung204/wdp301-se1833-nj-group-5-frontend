@@ -15,6 +15,8 @@ export default async function Page({ searchParams }: PageProps) {
 
   await queryClient.prefetchQuery({
     queryKey: ['bookings', 'all', { id: bookingId }],
+
+    // @ts-expect-error id here is enough for the query
     queryFn: () => bookingsService.getAllBookings({ id: bookingId }),
   });
 

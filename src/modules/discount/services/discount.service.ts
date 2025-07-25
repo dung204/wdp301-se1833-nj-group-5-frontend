@@ -1,18 +1,12 @@
 import { HttpClient } from '@/base/lib';
-import { BaseEntity, CommonSearchParams, SuccessResponse } from '@/base/types';
-import { Hotel } from '@/modules/hotels';
+import { SuccessResponse } from '@/base/types';
 
-import { CreateDiscountSchema, UpdateDiscountSchema } from '../types';
-
-// Interface chính
-export interface Discount extends BaseEntity {
-  amount: string;
-  expiredTimestamp: Date;
-  applicableHotels: Hotel[];
-  maxQualityPerUser: string;
-  usageCount: string;
-  state: 'ACTIVE' | 'INACTIVE';
-}
+import {
+  CreateDiscountSchema,
+  Discount,
+  DiscountsSearchParams,
+  UpdateDiscountSchema,
+} from '../types';
 
 // Service
 class DiscountService extends HttpClient {
@@ -20,7 +14,7 @@ class DiscountService extends HttpClient {
     super();
   }
 
-  public getAllDiscount(params?: CommonSearchParams) {
+  public getAllDiscounts(params?: DiscountsSearchParams) {
     return this.get<SuccessResponse<Discount[]>>('/discounts', { params });
   }
 

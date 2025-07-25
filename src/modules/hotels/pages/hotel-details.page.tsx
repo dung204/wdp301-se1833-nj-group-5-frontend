@@ -1,6 +1,6 @@
 'use client';
 
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { useSuspenseInfiniteQuery, useSuspenseQuery } from '@tanstack/react-query';
 import {
   Bed,
   Car,
@@ -10,6 +10,7 @@ import {
   MapPin,
   Phone,
   StarIcon,
+  Ticket,
   Tv,
   Utensils,
   Waves,
@@ -17,22 +18,31 @@ import {
   Wind,
 } from 'lucide-react';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
 import type React from 'react';
+import { Suspense, useEffect, useState } from 'react';
+import { useInView } from 'react-intersection-observer';
 
-import { Pagination } from '@/base/components/layout/pagination';
 import { Badge } from '@/base/components/ui/badge';
-import { Button } from '@/base/components/ui/button';
 import { Card, CardContent } from '@/base/components/ui/card';
+import {
+  Carousel,
+  CarouselApi,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from '@/base/components/ui/carousel';
+import { DiscountState, discountService } from '@/modules/discount';
+import { DiscountCard, DiscountCardSkeleton } from '@/modules/discount/components/discount-card';
 import { Room, RoomSearchParams } from '@/modules/rooms';
-import { RoomCard } from '@/modules/rooms/components/room-card';
+import { RoomCard, RoomCardSkeleton } from '@/modules/rooms/components/room-card';
 import { roomsService } from '@/modules/rooms/services/rooms.service';
 
 import { HotelSearchBoxSmall } from '../components/hotel-search-box';
 import { hotelsService } from '../services/hotels.service';
 
-type RoomsPageProps = {
-  searchParams: RoomSearchParams;
+type HotelDetailsPageProps = {
+  searchParams: Omit<RoomSearchParams, 'page' | 'pageSize'>;
   hotelId: string;
 };
 
@@ -53,8 +63,7 @@ function getAmenityIcon(amenity: string) {
   return <IconComponent className="h-4 w-4" />;
 }
 
-export function HotelDetailsPage({ searchParams, hotelId }: RoomsPageProps) {
-  const router = useRouter();
+export function HotelDetailsPage({ searchParams, hotelId }: HotelDetailsPageProps) {
   const {
     data: { data: hotels },
   } = useSuspenseQuery({
@@ -62,22 +71,12 @@ export function HotelDetailsPage({ searchParams, hotelId }: RoomsPageProps) {
     queryFn: () => hotelsService.getAllHotels({ id: hotelId }),
   });
 
-  const {
-    data: {
-      data: rooms,
-      metadata: { pagination: roomsPagination },
-    },
-  } = useSuspenseQuery({
-    queryKey: ['rooms', 'all', { ...searchParams, hotel: hotelId }],
-    queryFn: () => roomsService.getAllRooms({ ...searchParams, hotel: hotelId }),
-  });
-
   const hotel = hotels?.[0]; // Assuming single hotel data
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       <HotelSearchBoxSmall />
-      <div className="mx-auto max-w-7xl space-y-8 p-6">
+      <div className="mx-auto max-w-7xl space-y-12 p-6">
         {/* Hotel Information Section */}
         {hotel && (
           <div className="relative">
@@ -245,51 +244,178 @@ export function HotelDetailsPage({ searchParams, hotelId }: RoomsPageProps) {
           </div>
         )}
 
-        {/* Rooms Section */}
-        <div className="space-y-6">
-          {/* Section Header */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="mb-2 text-3xl font-bold text-gray-900">Danh sách phòng</h2>
-              <p className="text-gray-600">Chọn phòng phù hợp với nhu cầu của bạn</p>
-            </div>
-            <div className="flex items-center gap-4">
-              <Badge variant="outline" className="bg-white px-4 py-2 text-base font-medium">
-                <Bed className="mr-2 h-4 w-4" />
-                {roomsPagination?.total || 0} phòng có sẵn
-              </Badge>
-            </div>
-          </div>
+        <Suspense>
+          <DiscountsSection hotelId={hotelId} />
+        </Suspense>
 
-          <div className="space-y-6">
-            {rooms?.map((room: Room) => <RoomCard key={room.id} room={room} />)}
-          </div>
-
-          <Pagination pagination={roomsPagination} />
-
-          {/* Empty State */}
-          {(!rooms || rooms.length === 0) && (
-            <div className="py-16 text-center">
-              <div className="mx-auto max-w-md rounded-2xl bg-white/80 p-12 backdrop-blur-sm">
-                <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100">
-                  <Bed className="h-8 w-8 text-gray-400" />
-                </div>
-                <h3 className="mb-2 text-xl font-semibold text-gray-900">Không có phòng nào</h3>
-                <p className="mb-6 text-gray-600">
-                  Không tìm thấy phòng nào phù hợp với tiêu chí tìm kiếm của bạn
-                </p>
-                <Button
-                  variant="outline"
-                  onClick={() => router.back()}
-                  className="hover:bg-blue-50"
-                >
-                  Quay lại tìm kiếm
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
+        <Suspense>
+          <RoomsSection hotelId={hotelId} searchParams={searchParams} />
+        </Suspense>
       </div>
     </div>
+  );
+}
+
+function DiscountsSection({ hotelId }: { hotelId: string }) {
+  const [api, setApi] = useState<CarouselApi>();
+  const {
+    data: { pages },
+    isFetchingNextPage,
+    fetchNextPage,
+    hasNextPage,
+  } = useSuspenseInfiniteQuery({
+    queryKey: ['discounts', 'all', { hotelId, state: DiscountState.ACTIVE }],
+    queryFn: ({ pageParam }) =>
+      discountService.getAllDiscounts({
+        hotelId,
+        page: pageParam,
+        pageSize: 3,
+        state: DiscountState.ACTIVE,
+      }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) =>
+      lastPage.metadata.pagination.hasNextPage
+        ? lastPage.metadata.pagination.currentPage + 1
+        : undefined,
+  });
+
+  const discounts = pages.flatMap((page) => page.data);
+  const totalDiscounts = pages.at(-1)?.metadata.pagination.total || 0;
+
+  useEffect(() => {
+    if (!api) return;
+
+    api.on('scroll', async () => {
+      const lastSlide = api?.slideNodes().length - 1;
+      const lastSlideInView = api?.slidesInView().includes(lastSlide);
+
+      if (lastSlideInView && hasNextPage && !isFetchingNextPage) {
+        fetchNextPage();
+      }
+    });
+  }, [api, hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  return (
+    <section className="space-y-6">
+      <div className="flex justify-between">
+        <div>
+          <h2 className="mb-2 text-3xl font-bold text-gray-900">Mã giảm giá cho khách sạn này</h2>
+          <p className="text-gray-600">
+            Đặt phòng ngay hôm nay để nhận ưu đãi đặc biệt từ khách sạn
+          </p>
+        </div>
+        <div className="flex items-start gap-4">
+          <Badge variant="outline" className="bg-white px-4 py-2 text-base font-medium">
+            <Ticket className="mr-2 h-4 w-4" />
+            {totalDiscounts} mã giảm giá có sẵn
+          </Badge>
+        </div>
+      </div>
+      {discounts.length !== 0 ? (
+        <Carousel
+          setApi={setApi}
+          opts={{
+            duration: 20,
+          }}
+        >
+          <CarouselContent>
+            {discounts.map((discount) => (
+              <CarouselItem key={discount.id} className="basis-1/3">
+                <DiscountCard discount={discount} />
+              </CarouselItem>
+            ))}
+            {hasNextPage && (
+              <CarouselItem className="basis-1/3">
+                <DiscountCardSkeleton />
+              </CarouselItem>
+            )}
+          </CarouselContent>
+          <CarouselPrevious />
+          <CarouselNext />
+        </Carousel>
+      ) : (
+        <div className="text-center">
+          <div className="mx-auto max-w-md rounded-2xl bg-white/80 p-12 backdrop-blur-sm">
+            <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100">
+              <Ticket className="h-8 w-8 text-gray-400" />
+            </div>
+            <h3 className="mb-2 text-xl font-semibold text-gray-900">Không có mã giảm giá nào</h3>
+            <p className="mb-6 text-gray-600">
+              Hiện tại không có mã giảm giá nào cho khách sạn này. Hãy kiểm tra lại sau hoặc liên hệ
+              với khách sạn để biết thêm thông tin.
+            </p>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function RoomsSection({ hotelId, searchParams }: HotelDetailsPageProps) {
+  const { inView, ref } = useInView();
+  const {
+    data: { pages },
+    isFetchingNextPage,
+    fetchNextPage,
+    hasNextPage,
+  } = useSuspenseInfiniteQuery({
+    queryKey: ['rooms', 'all', { hotelId, ...searchParams }],
+    queryFn: ({ pageParam }) =>
+      roomsService.getAllRooms({ ...searchParams, hotel: hotelId, page: pageParam, pageSize: 3 }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) =>
+      lastPage.metadata.pagination.hasNextPage
+        ? lastPage.metadata.pagination.currentPage + 1
+        : undefined,
+  });
+
+  const rooms = pages.flatMap((page) => page.data);
+  const totalRooms = pages.at(-1)?.metadata.pagination.total || 0;
+
+  useEffect(() => {
+    if (inView && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  return (
+    <section className="space-y-6">
+      <div className="flex justify-between">
+        <div>
+          <h2 className="mb-2 text-3xl font-bold text-gray-900">Danh sách phòng</h2>
+          <p className="text-gray-600">Chọn phòng phù hợp với nhu cầu của bạn</p>
+        </div>
+        <div className="flex items-start gap-4">
+          <Badge variant="outline" className="bg-white px-4 py-2 text-base font-medium">
+            <Bed className="mr-2 h-4 w-4" />
+            {totalRooms} phòng có sẵn
+          </Badge>
+        </div>
+      </div>
+
+      {rooms.length !== 0 ? (
+        <div className="space-y-6">
+          {rooms?.map((room: Room) => <RoomCard key={room.id} room={room} />)}
+          {hasNextPage && (
+            <>
+              <RoomCardSkeleton />
+              <div ref={ref}></div>
+            </>
+          )}
+        </div>
+      ) : (
+        <div className="py-16 text-center">
+          <div className="mx-auto max-w-md rounded-2xl bg-white/80 p-12 backdrop-blur-sm">
+            <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100">
+              <Bed className="h-8 w-8 text-gray-400" />
+            </div>
+            <h3 className="mb-2 text-xl font-semibold text-gray-900">Không có phòng nào</h3>
+            <p className="mb-6 text-gray-600">
+              Không tìm thấy phòng nào phù hợp với tiêu chí tìm kiếm của bạn
+            </p>
+          </div>
+        </div>
+      )}
+    </section>
   );
 }

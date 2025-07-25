@@ -66,8 +66,6 @@ export function Pagination({ pagination }: { pagination: PaginationType }) {
             <PaginationEllipsis />
           </PaginationItem>
         )}
-
-        {/* Show current page if it's not page 1 and not the last page */}
         {pagination.currentPage > 1 && pagination.currentPage < pagination.totalPage && (
           <PaginationItem>
             <PaginationLink isActive={true}>{pagination.currentPage}</PaginationLink>

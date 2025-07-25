@@ -1,7 +1,7 @@
 'use client';
 
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { Banknote, Eye, FilterIcon, MapPin, User, UsersRound } from 'lucide-react';
+import { Banknote, Eye, FilterIcon, MapPin, UsersRound } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -42,6 +42,7 @@ const bookingFilterSchema = z.object({
     z.coerce.number().min(HotelUtils.DEFAULT_MIN_PRICE),
     z.coerce.number().max(HotelUtils.DEFAULT_MAX_PRICE),
   ]),
+  inFuture: z.enum(['all', 'true', 'false']).default('all'),
 });
 export function ManagerBookingsPage({ searchParams }: BookingsPageProps) {
   const router = useRouter();
@@ -61,6 +62,7 @@ export function ManagerBookingsPage({ searchParams }: BookingsPageProps) {
     const {
       hotelId,
       price: [minPrice, maxPrice],
+      inFuture,
     } = payload;
 
     const url = new URL(window.location.href);
@@ -72,6 +74,11 @@ export function ManagerBookingsPage({ searchParams }: BookingsPageProps) {
       url.searchParams.set('hotelId', hotelId);
     } else {
       url.searchParams.delete('hotelId');
+    }
+    if (inFuture) {
+      url.searchParams.set('inFuture', inFuture);
+    } else {
+      url.searchParams.delete('inFuture');
     }
 
     router.push(url.href);
@@ -100,6 +107,7 @@ export function ManagerBookingsPage({ searchParams }: BookingsPageProps) {
               defaultValues={{
                 hotelId: searchParams.hotelId,
                 price: [searchParams.minPrice, searchParams.maxPrice],
+                inFuture: searchParams.inFuture || 'all',
               }}
               fields={[
                 {
@@ -126,8 +134,25 @@ export function ManagerBookingsPage({ searchParams }: BookingsPageProps) {
                   min: BookingUtils.DEFAULT_MIN_PRICE,
                   max: BookingUtils.DEFAULT_MAX_PRICE,
                   step: BookingUtils.PRICE_RANGE,
-                  className: 'space-y-4',
+                  className: '',
                   numberFormat: (value) => StringUtils.formatCurrency(value.toString()),
+                  render: ({ Label, Control }) => (
+                    <>
+                      <Label className="text-base font-semibold text-gray-700" />
+                      <Control />
+                    </>
+                  ),
+                },
+                {
+                  name: 'inFuture',
+                  type: 'select',
+                  label: 'Thời gian đặt phòng',
+                  placeholder: 'Thời gian đặt phòng',
+                  options: [
+                    { label: 'Tất cả', value: 'all' },
+                    { label: 'Chỉ booking trong tương lai', value: 'true' },
+                  ],
+                  className: 'self-baseline',
                   render: ({ Label, Control }) => (
                     <>
                       <Label className="text-base font-semibold text-gray-700" />
@@ -180,7 +205,7 @@ export function ManagerBookingsPage({ searchParams }: BookingsPageProps) {
                       {[
                         'Tên phòng',
                         'Khách sạn',
-                        'Chủ sở hữu',
+                        'Thời gian nhận phòng / trả phòng',
                         'Giá một đêm',
                         'Số lượng người',
                         'Số phòng tối đa',
@@ -208,9 +233,15 @@ export function ManagerBookingsPage({ searchParams }: BookingsPageProps) {
                         </TableCell>
 
                         <TableCell>
-                          <div className="flex items-center text-gray-600">
-                            <User className="mr-1 h-4 w-4" />
-                            {booking.hotel?.owner?.fullName}
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <p className="font-semibold">
+                                {new Date(booking.checkIn).toLocaleDateString('vi-VN')}-{' '}
+                                {booking.checkOut
+                                  ? new Date(booking.checkOut).toLocaleDateString('vi-VN')
+                                  : 'Chưa xác định'}
+                              </p>
+                            </div>
                           </div>
                         </TableCell>
 
