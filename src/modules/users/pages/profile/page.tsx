@@ -20,9 +20,11 @@ import { Button } from '@/base/components/ui/button';
 import { Card, CardContent } from '@/base/components/ui/card';
 import { Label } from '@/base/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/base/components/ui/radio-group';
+import { Select } from '@/base/components/ui/select';
 import { Switch } from '@/base/components/ui/switch';
 import { useUserProfile } from '@/base/hooks/use-userProfile';
 import { userService } from '@/modules/users/services/user.service';
+import { Gender, gender } from '@/modules/users/types';
 
 export function UserProfile() {
   const { data: res } = useUserProfile();
@@ -31,6 +33,7 @@ export function UserProfile() {
   const [emailFrequency, setEmailFrequency] = useState('never');
   const [savePaymentInfo, setSavePaymentInfo] = useState(true);
   const [fullName, setFullName] = useState('');
+  const [selectedGender, setSelectedGender] = useState<Gender | ''>('');
   const [isEditing, setIsEditing] = useState(false);
 
   const [showPasswordForm, setShowPasswordForm] = useState(false);
@@ -57,6 +60,9 @@ export function UserProfile() {
     if (user?.fullName) {
       setFullName(user.fullName);
     }
+    if (user?.gender) {
+      setSelectedGender(user.gender);
+    }
   }, [user]);
   const sidebarItems = [
     { icon: Home, label: 'Home', active: false },
@@ -76,12 +82,17 @@ export function UserProfile() {
     { label: 'Đăng ký nhận thư điện tử', active: false },
   ];
   const handleSave = async () => {
-    if (!user?.id) return;
     try {
-      await userService.updateUser(user.id)({ fullName });
+      const updateData: { fullName: string; gender?: Gender } = { fullName };
+      if (selectedGender) {
+        updateData.gender = selectedGender;
+      }
+      await userService.updateUserProfile(updateData);
       setIsEditing(false);
+      toast.success('Cập nhật thông tin thành công!');
     } catch (error) {
-      console.error('Lỗi cập nhật tên người dùng:', error);
+      console.error('Lỗi cập nhật thông tin người dùng:', error);
+      toast.error('Cập nhật thông tin thất bại. Vui lòng thử lại.');
     }
   };
   const handleChangePassword = async () => {
@@ -155,45 +166,72 @@ export function UserProfile() {
           <h1 className="mb-6 text-2xl font-semibold text-gray-900">Thông tin người dùng</h1>
           <Card className="mb-6">
             <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-400">
-                    <span className="text-2xl font-semibold text-white">H</span>
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-400">
+                      <span className="text-2xl font-semibold text-white">H</span>
+                    </div>
+                    <div className="grid flex-1 grid-cols-1 gap-8 md:grid-cols-2 md:gap-12">
+                      <div>
+                        <h3 className="font-semibold text-gray-900">Họ & Tên</h3>
+                        {isEditing ? (
+                          <input
+                            value={fullName}
+                            onChange={(e) => setFullName(e.target.value)}
+                            className="mt-1 w-full rounded border px-2 py-1 text-gray-800"
+                            placeholder="Nhập họ và tên"
+                          />
+                        ) : (
+                          <p className="text-gray-600">{user?.fullName}</p>
+                        )}
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-gray-900">Giới tính</h3>
+                        {isEditing ? (
+                          <Select
+                            value={selectedGender}
+                            onChange={(value) => setSelectedGender(value as Gender)}
+                            options={Object.entries(gender).map(([value, label]) => ({
+                              value,
+                              label,
+                            }))}
+                            placeholder="Chọn giới tính"
+                            clearable={true}
+                            searchable={false}
+                            triggerClassName="mt-1 w-full"
+                          />
+                        ) : (
+                          <p className="text-gray-600">
+                            {user?.gender ? gender[user.gender] : 'Chưa cập nhật'}
+                          </p>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">Họ & Tên</h3>
-                    {isEditing ? (
-                      <input
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
-                        className="mt-1 rounded border px-2 py-1 text-gray-800"
-                      />
-                    ) : (
-                      <p className="text-gray-600">{user?.fullName}</p>
-                    )}
-                  </div>
+                  {isEditing ? (
+                    <div className="flex gap-2">
+                      <Button variant="default" size="sm" onClick={handleSave}>
+                        Lưu
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setFullName(user?.fullName || '');
+                          setSelectedGender(user?.gender || '');
+                          setIsEditing(false);
+                        }}
+                      >
+                        Hủy
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+                      Chỉnh sửa
+                    </Button>
+                  )}
                 </div>
-                {isEditing ? (
-                  <div className="flex gap-2">
-                    <Button variant="default" size="sm" onClick={handleSave}>
-                      Lưu
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setFullName(user?.fullName || '');
-                        setIsEditing(false);
-                      }}
-                    >
-                      Hủy
-                    </Button>
-                  </div>
-                ) : (
-                  <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
-                    Chỉnh sửa
-                  </Button>
-                )}
               </div>
             </CardContent>
           </Card>

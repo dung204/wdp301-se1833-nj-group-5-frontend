@@ -50,6 +50,7 @@ export function Pagination({ pagination }: { pagination: PaginationType }) {
             onClick={() => navigateToPrevPage()}
           />
         </PaginationItem>
+        {/* Always show page 1 */}
         <PaginationItem>
           <PaginationLink
             onClick={pagination.currentPage !== 1 ? () => navigateToPage(1) : undefined}
@@ -58,29 +59,35 @@ export function Pagination({ pagination }: { pagination: PaginationType }) {
             1
           </PaginationLink>
         </PaginationItem>
+
+        {/* Show ellipsis if there's a gap between page 1 and current page */}
         {pagination.currentPage - 1 > 1 && (
-          <>
-            <PaginationItem>
-              <PaginationEllipsis />
-            </PaginationItem>
-          </>
+          <PaginationItem>
+            <PaginationEllipsis />
+          </PaginationItem>
         )}
         {pagination.currentPage > 1 && pagination.currentPage < pagination.totalPage && (
           <PaginationItem>
             <PaginationLink isActive={true}>{pagination.currentPage}</PaginationLink>
           </PaginationItem>
         )}
+
+        {/* Show ellipsis if there's a gap between current page and last page */}
         {pagination.totalPage - pagination.currentPage > 1 && (
-          <>
-            <PaginationItem>
-              <PaginationEllipsis />
-            </PaginationItem>
-          </>
+          <PaginationItem>
+            <PaginationEllipsis />
+          </PaginationItem>
         )}
+
+        {/* Show last page if it's different from page 1 */}
         {pagination.totalPage > 1 && (
           <PaginationItem>
             <PaginationLink
-              onClick={() => navigateToPage(pagination.totalPage)}
+              onClick={
+                pagination.currentPage !== pagination.totalPage
+                  ? () => navigateToPage(pagination.totalPage)
+                  : undefined
+              }
               isActive={pagination.currentPage === pagination.totalPage}
             >
               {pagination.totalPage}

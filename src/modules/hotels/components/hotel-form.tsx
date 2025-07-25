@@ -20,10 +20,11 @@ export function HotelForm(props: HotelFormProps) {
   // Controlled state for select values (codes for display, names for form)
   const [selectedProvinceCode, setSelectedProvinceCode] = useState<string>('');
   const [selectedCommuneCode, setSelectedCommuneCode] = useState<string>('');
+  const [initialized, setInitialized] = useState(false);
 
-  // Initialize province and commune codes based on form default values
+  // Initialize province and commune codes based on form default values only once
   useEffect(() => {
-    if (props.defaultValues && provinces.length > 0) {
+    if (!initialized && props.defaultValues && provinces.length > 0) {
       const provinceName = props.defaultValues.province;
       if (provinceName) {
         const province = provinces.find((p) => p.name === provinceName);
@@ -32,11 +33,13 @@ export function HotelForm(props: HotelFormProps) {
           fetchCommunes(province.code);
         }
       }
+      setInitialized(true);
     }
-  }, [provinces, props.defaultValues, fetchCommunes]);
+  }, [provinces, props.defaultValues, fetchCommunes, initialized]);
 
+  // Initialize commune code based on form default values only once when communes are loaded
   useEffect(() => {
-    if (props.defaultValues && communes.length > 0) {
+    if (initialized && props.defaultValues && communes.length > 0 && !selectedCommuneCode) {
       const communeName = props.defaultValues.commune;
       if (communeName) {
         const commune = communes.find((c) => c.name === communeName);
@@ -45,7 +48,7 @@ export function HotelForm(props: HotelFormProps) {
         }
       }
     }
-  }, [communes, props.defaultValues]);
+  }, [communes, props.defaultValues, initialized, selectedCommuneCode]);
 
   return (
     <Form

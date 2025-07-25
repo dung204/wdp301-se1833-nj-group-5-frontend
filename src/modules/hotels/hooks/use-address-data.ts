@@ -1,48 +1,40 @@
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 
 import { Commune, Province, addressService } from '../services/address.service';
 
 export function useAddressData() {
-  const [provinces, setProvinces] = useState<Province[]>([]);
-  const [communes, setCommunes] = useState<Commune[]>([]);
-  const [loadingProvinces, setLoadingProvinces] = useState(true);
-  const [loadingCommunes, setLoadingCommunes] = useState(false);
+  const [selectedProvinceCode, setSelectedProvinceCode] = useState<string>('');
 
-  useEffect(() => {
-    const fetchProvinces = async () => {
-      try {
-        const data = await addressService.getProvinces();
-        setProvinces(data);
-      } catch (error) {
-        console.error('Error fetching provinces:', error);
-      } finally {
-        setLoadingProvinces(false);
-      }
-    };
+  const {
+    data: provinces = [],
+    isLoading: loadingProvinces,
+    error: provincesError,
+  } = useQuery<Province[]>({
+    queryKey: ['provinces'],
+    queryFn: () => addressService.getProvinces(),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+  });
 
-    fetchProvinces();
-  }, []);
+  const {
+    data: communes = [],
+    isLoading: loadingCommunes,
+    error: communesError,
+  } = useQuery<Commune[]>({
+    queryKey: ['communes', selectedProvinceCode],
+    queryFn: () => addressService.getCommunes(selectedProvinceCode),
+    enabled: !!selectedProvinceCode,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+  });
 
-  const fetchCommunes = async (provinceCode: string) => {
-    if (!provinceCode) {
-      setCommunes([]);
-      return;
-    }
-
-    setLoadingCommunes(true);
-    try {
-      const data = await addressService.getCommunes(provinceCode);
-      setCommunes(data);
-    } catch (error) {
-      console.error('Error fetching communes:', error);
-      setCommunes([]);
-    } finally {
-      setLoadingCommunes(false);
-    }
+  const fetchCommunes = (provinceCode: string) => {
+    setSelectedProvinceCode(provinceCode);
   };
 
   const clearCommunes = () => {
-    setCommunes([]);
+    setSelectedProvinceCode('');
   };
 
   return {
@@ -52,5 +44,7 @@ export function useAddressData() {
     loadingCommunes,
     fetchCommunes,
     clearCommunes,
+    provincesError,
+    communesError,
   };
 }
