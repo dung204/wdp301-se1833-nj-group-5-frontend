@@ -133,7 +133,13 @@ export function DateTimePicker({
               })}
             </DrawerTitle>
           </DrawerHeader>
-          <Calendar mode="single" selected={date} onSelect={(d) => handleSelect(d)} initialFocus />
+          <Calendar
+            mode="single"
+            selected={date}
+            onSelect={(d) => handleSelect(d)}
+            autoFocus
+            captionLayout="dropdown"
+          />
           <Separator />
           <div className="w-full space-y-2 p-4">
             {toggleTime && (
@@ -207,7 +213,13 @@ export function DateTimePicker({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0">
-        <Calendar mode="single" selected={date} onSelect={(d) => handleSelect(d)} initialFocus />
+        <Calendar
+          mode="single"
+          selected={date}
+          onSelect={(d) => handleSelect(d)}
+          autoFocus
+          captionLayout="dropdown"
+        />
         <Separator />
         <div className="w-full space-y-2 p-4">
           {toggleTime && (

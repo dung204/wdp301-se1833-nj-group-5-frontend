@@ -96,7 +96,13 @@ export function DatePicker(props: DatePickerProps) {
               })}
             </DrawerTitle>
           </DrawerHeader>
-          <Calendar mode="single" selected={date} onSelect={handleDateChange} initialFocus />
+          <Calendar
+            mode="single"
+            selected={date}
+            onSelect={handleDateChange}
+            autoFocus
+            captionLayout="dropdown"
+          />
         </DrawerContent>
       </Drawer>
     );
@@ -127,7 +133,13 @@ export function DatePicker(props: DatePickerProps) {
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0">
-        <Calendar mode="single" selected={date} onSelect={handleDateChange} initialFocus />
+        <Calendar
+          mode="single"
+          selected={date}
+          onSelect={handleDateChange}
+          autoFocus
+          captionLayout="dropdown"
+        />
       </PopoverContent>
     </Popover>
   );

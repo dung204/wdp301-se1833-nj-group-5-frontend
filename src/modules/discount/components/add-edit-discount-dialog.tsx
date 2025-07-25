@@ -1,4 +1,4 @@
-import { Edit, Loader2, Plus } from 'lucide-react';
+import { Edit, Plus } from 'lucide-react';
 import { z } from 'zod';
 
 import { Button } from '@/base/components/ui/button';
@@ -10,26 +10,26 @@ import {
   DialogTitle,
 } from '@/base/components/ui/dialog';
 import { Form } from '@/base/components/ui/form';
-import { createDiscountSchema } from '@/modules/manager/services/discount.service';
+import { HotelUtils } from '@/modules/hotels/utils/hotel.utils';
+
+import { Discount, DiscountState, createDiscountSchema, discountStates } from '../types';
 
 interface AddEditDiscountDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   formMode: 'add' | 'edit';
-  defaultValues: z.infer<typeof createDiscountSchema>;
   onSubmit: (values: z.infer<typeof createDiscountSchema>) => void;
   isPending: boolean;
-  hotels: { id: string; name: string }[];
+  discount?: Discount;
 }
 
 export function AddEditDiscountDialog({
   open,
   onOpenChange,
   formMode,
-  defaultValues,
+  discount,
   onSubmit,
   isPending,
-  hotels,
 }: AddEditDiscountDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -43,55 +43,72 @@ export function AddEditDiscountDialog({
 
         <Form
           schema={createDiscountSchema}
-          defaultValues={defaultValues}
-          className="space-y-4"
+          loading={isPending}
+          defaultValues={{
+            amount: discount?.amount,
+            expiredTimestamp: discount?.expiredTimestamp
+              ? new Date(discount.expiredTimestamp)
+              : undefined,
+            applicableHotels: discount?.applicableHotels.map((h) => h.id) || [],
+            maxQuantityPerUser: discount?.maxQuantityPerUser,
+            usageCount: discount?.usageCount,
+            state: discount?.state || DiscountState.ACTIVE,
+          }}
+          className="gap-6"
           fields={[
+            {
+              name: 'title',
+              type: 'text',
+              label: 'Tiêu đề mã giảm giá',
+              placeholder: 'Nhập tiêu đề mã giảm giá',
+              disabled: isPending,
+            },
             {
               name: 'amount',
               type: 'text',
-              label: 'Phần trăm giảm giá (%) *',
+              label: 'Phần trăm giảm giá (%)',
               placeholder: 'Nhập phần trăm (ví dụ: 10)',
               disabled: isPending,
             },
             {
               name: 'expiredTimestamp',
-              type: 'date',
-              label: 'Ngày hết hạn *',
-              placeholder: 'Chọn ngày hết hạn',
+              type: 'datetime',
+              label: 'Thời gian hết hạn',
+              placeholder: 'Chọn thời gian hết hạn',
               disabled: isPending,
             },
             {
               name: 'applicableHotels',
               type: 'select',
-              label: 'Khách sạn áp dụng *',
-              placeholder: 'Chọn khách sạn',
-              options: hotels.map((h) => ({ label: h.name, value: h.id })),
+              async: true,
+              ...HotelUtils.getHotelsByAdminAsyncSelectOptions('name'),
+              label: 'Khách sạn áp dụng',
+              placeholder: 'Chọn khách sạn...',
               multiple: true,
               disabled: isPending,
             },
             {
-              name: 'maxQualityPerUser',
+              name: 'maxQuantityPerUser',
               type: 'text',
-              label: 'Số lượt tối đa/người *',
+              label: 'Số lượt tối đa/người',
               placeholder: 'Ví dụ: 1, 2...',
               disabled: isPending,
             },
             {
               name: 'usageCount',
               type: 'text',
-              label: 'Tổng số lượt sử dụng *',
+              label: 'Tổng số lượt sử dụng',
               placeholder: 'Ví dụ: 100',
               disabled: isPending,
             },
             {
               name: 'state',
               type: 'select',
-              label: 'Trạng thái *',
+              label: 'Trạng thái',
               placeholder: 'Chọn trạng thái',
-              options: [
-                { label: 'Đang hoạt động', value: 'ACTIVE' },
-                { label: 'Không hoạt động', value: 'INACTIVE' },
-              ],
+              clearable: false,
+              searchable: false,
+              options: Object.entries(discountStates).map(([value, label]) => ({ value, label })),
               disabled: isPending,
             },
           ]}
@@ -102,16 +119,7 @@ export function AddEditDiscountDialog({
                 Hủy
               </Button>
               <SubmitButton className="bg-blue-600 hover:bg-blue-700" aria-disabled={isPending}>
-                {isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Đang xử lý...
-                  </>
-                ) : formMode === 'add' ? (
-                  'Thêm mã'
-                ) : (
-                  'Lưu thay đổi'
-                )}
+                {formMode === 'add' ? 'Thêm mã' : 'Lưu thay đổi'}
               </SubmitButton>
             </DialogFooter>
           )}

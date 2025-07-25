@@ -65,7 +65,7 @@ export function Pagination({ pagination }: { pagination: PaginationType }) {
             </PaginationItem>
           </>
         )}
-        {pagination.currentPage > 1 && (
+        {pagination.currentPage > 1 && pagination.currentPage < pagination.totalPage && (
           <PaginationItem>
             <PaginationLink isActive={true}>{pagination.currentPage}</PaginationLink>
           </PaginationItem>

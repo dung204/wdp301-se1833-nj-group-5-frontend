@@ -1,9 +1,18 @@
-import { DiscountManagement } from '@/modules/discount/pages/manager-discount.page';
+import { Suspense } from 'react';
 
-export default function ManageDiscountPage() {
+import { discountsSearchParamsSchema } from '@/modules/discount';
+import { ManagerDiscountsPage } from '@/modules/discount/pages/manager-discounts.page';
+
+type PageProps = {
+  searchParams: Promise<unknown>;
+};
+
+export default async function Page({ searchParams }: PageProps) {
+  const validatedSearchParams = discountsSearchParamsSchema.parse(await searchParams);
+
   return (
-    <div>
-      <DiscountManagement />
-    </div>
+    <Suspense>
+      <ManagerDiscountsPage searchParams={validatedSearchParams} />
+    </Suspense>
   );
 }

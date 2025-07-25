@@ -1,10 +1,12 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { Edit, Eye, MoreHorizontal, Plus, RotateCcw, Trash2 } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
 
+import { Pagination } from '@/base/components/layout/pagination';
+import { AsyncSelect } from '@/base/components/ui/async-select';
 import { Badge } from '@/base/components/ui/badge';
 import { Button } from '@/base/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/base/components/ui/card';
@@ -29,70 +31,62 @@ import {
   TableHeader,
   TableRow,
 } from '@/base/components/ui/table';
-import { hotelsService } from '@/modules/hotels';
+import { HotelUtils } from '@/modules/hotels/utils/hotel.utils';
 
-import { AddEditDiscountDialog } from '../components/add-edit-room-dialog';
+import { AddEditDiscountDialog } from '../components/add-edit-discount-dialog';
 import { useDiscountMutations } from '../hooks/use-discount-mutations';
-import { Discount, discountService } from '../services/discount.service';
-import { CreateDiscountSchema } from '../types';
+import { discountService } from '../services/discount.service';
+import {
+  CreateDiscountSchema,
+  Discount,
+  DiscountState,
+  DiscountsSearchParams,
+  discountStates,
+} from '../types';
 
-// Đổi tên file này nếu cần
+type ManagerDiscountsPageProps = {
+  searchParams?: DiscountsSearchParams;
+};
 
-export function DiscountManagement() {
-  const [page, setPage] = useState(1);
+export function ManagerDiscountsPage({ searchParams }: ManagerDiscountsPageProps) {
   const [formMode, setFormMode] = useState<'add' | 'edit'>('add');
   const [selectHotelId, setSelectedHotelId] = useState<string>('');
-  const [selectDiscount, setSelectDiscount] = useState<Discount | null>(null);
+  const [selectedDiscount, setSelectedDiscount] = useState<Discount>();
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [discountToDelete, setDiscountToDelete] = useState<Discount | null>(null);
+  const [discountToDelete, setDiscountToDelete] = useState<Discount>();
   const [addEditDialogOpen, setAddEditDialogOpen] = useState(false);
-  const [editingDiscount, setEditingDiscount] = useState<Discount | null>(null);
+  const [editingDiscount, setEditingDiscount] = useState<Discount>();
+
   const { createDiscount, updateDiscount, deleteDiscount, restoreDiscount } = useDiscountMutations({
     onAddOrUpdateSuccess: () => setAddEditDialogOpen(false),
     onDeleteSuccess: () => {
       setDeleteDialogOpen(false);
-      setDiscountToDelete(null);
+      setDiscountToDelete(undefined);
     },
   });
 
-  const [discountFormData, setDiscountFormData] = useState<CreateDiscountSchema>({
-    amount: 0,
-    expiredTimestamp: new Date(),
-    applicableHotels: [],
-    maxQualityPerUser: 1,
-    usageCount: 1,
-    state: 'ACTIVE',
+  const {
+    data: {
+      data: discounts,
+      metadata: { pagination },
+    },
+  } = useSuspenseQuery({
+    queryKey: ['discounts', 'all', searchParams],
+    queryFn: () => discountService.getAllDiscounts(searchParams),
   });
 
-  const pageSize = 10;
-
-  const { data: discountData } = useQuery({
-    queryKey: ['discounts', page, pageSize, selectHotelId],
-    queryFn: () =>
-      discountService.getAllDiscount({
-        page,
-        pageSize,
-      }),
-  });
-
-  const { data: hotelData } = useQuery({
-    queryKey: ['hotels'],
-    queryFn: () => hotelsService.getAllHotels(),
-  });
-
-  const handleFilterHotel = (hotelId: string) => {
-    setSelectedHotelId(hotelId);
-  };
   const handleDeleteDiscountClick = (discount: Discount) => {
     setDiscountToDelete(discount);
     setDeleteDialogOpen(true);
   };
+
   const handleRestoreDiscountClick = (discount: Discount) => {
     setDiscountToDelete(discount);
     setDeleteDialogOpen(true);
   };
+
   const handleConfirmDelete = () => {
     if (discountToDelete?.id) {
       if (discountToDelete.deleteTimestamp) {
@@ -106,27 +100,12 @@ export function DiscountManagement() {
   const handleEditDiscountClick = (discount: Discount) => {
     setFormMode('edit');
     setEditingDiscount(discount);
-    setDiscountFormData({
-      amount: Number(discount.amount),
-      expiredTimestamp: new Date(discount.expiredTimestamp),
-      applicableHotels: discount.applicableHotels.map((h) => h.id),
-      maxQualityPerUser: Number(discount.maxQualityPerUser),
-      usageCount: Number(discount.usageCount),
-      state: discount.state,
-    });
     setAddEditDialogOpen(true);
   };
 
   const handleAddDiscountClick = () => {
     setFormMode('add');
-    setDiscountFormData({
-      amount: 0,
-      expiredTimestamp: new Date(),
-      applicableHotels: [],
-      maxQualityPerUser: 1,
-      usageCount: 1,
-      state: 'ACTIVE',
-    });
+    setEditingDiscount(undefined);
     setAddEditDialogOpen(true);
   };
 
@@ -146,7 +125,7 @@ export function DiscountManagement() {
           <p className="text-gray-600">Quản lý mã giảm giá của khách sạn</p>
         </div>
         <Button className="bg-blue-600 hover:bg-blue-700" onClick={handleAddDiscountClick}>
-          <Plus className="mr-2 h-4 w-4" />
+          <Plus />
           Thêm mã giảm giá
         </Button>
       </div>
@@ -155,17 +134,14 @@ export function DiscountManagement() {
         <CardHeader>
           <div className="grid grid-cols-1 items-center gap-4 sm:grid-cols-2">
             <CardTitle>Danh sách mã giảm giá</CardTitle>
-            <select
-              onChange={(e) => handleFilterHotel(e.target.value)}
-              className="rounded-md border px-3 py-2 text-sm"
-            >
-              <option value="">Tất cả khách sạn</option>
-              {hotelData?.data.map((hotel, index) => (
-                <option key={index} value={hotel.id}>
-                  {hotel.name}
-                </option>
-              ))}
-            </select>
+            <AsyncSelect
+              {...HotelUtils.getHotelsByAdminAsyncSelectOptions('name')}
+              multiple={false}
+              clearable
+              value={selectHotelId}
+              onChange={setSelectedHotelId}
+              placeholder="Tất cả khách sạn"
+            />
           </div>
         </CardHeader>
 
@@ -173,8 +149,8 @@ export function DiscountManagement() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>#</TableHead>
-                <TableHead>Mã giảm giá</TableHead>
+                <TableHead>Tiêu đề</TableHead>
+                <TableHead>Phần trăm giảm giá</TableHead>
                 <TableHead>Hết hạn</TableHead>
                 <TableHead>Giới hạn/người</TableHead>
                 <TableHead>Lượt dùng</TableHead>
@@ -184,27 +160,30 @@ export function DiscountManagement() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {discountData?.data.map((discount, index) => (
+              {discounts.map((discount) => (
                 <TableRow key={discount.id}>
-                  <TableCell>{index + 1}</TableCell>
+                  <TableCell>{discount.title}</TableCell>
                   <TableCell>{discount.amount}%</TableCell>
                   <TableCell>{new Date(discount.expiredTimestamp).toLocaleDateString()}</TableCell>
-                  <TableCell>{discount.maxQualityPerUser}</TableCell>
+                  <TableCell>{discount.maxQuantityPerUser}</TableCell>
                   <TableCell>{discount.usageCount}</TableCell>
                   <TableCell>
                     <ul className="ml-4 list-disc">
-                      {discount.applicableHotels.map((hotel) => (
+                      {discount.applicableHotels.slice(0, 2).map((hotel) => (
                         <li key={hotel.id}>{hotel.name}</li>
                       ))}
+                      {discount.applicableHotels.length > 2 && (
+                        <span>và {discount.applicableHotels.length - 2} khách sạn khác</span>
+                      )}
                     </ul>
                   </TableCell>
                   <TableCell>
                     <span
                       className={`rounded px-2 py-1 text-xs text-white ${
-                        discount.state === 'ACTIVE' ? 'bg-green-500' : 'bg-gray-400'
+                        discount.state === DiscountState.ACTIVE ? 'bg-green-500' : 'bg-gray-400'
                       }`}
                     >
-                      {discount.state}
+                      {discountStates[discount.state]}
                     </span>
                   </TableCell>
                   <TableCell>
@@ -217,7 +196,7 @@ export function DiscountManagement() {
                       <DropdownMenuContent>
                         <DropdownMenuItem
                           onClick={() => {
-                            setSelectDiscount(discount);
+                            setSelectedDiscount(discount);
                             setViewDialogOpen(true);
                           }}
                         >
@@ -254,47 +233,9 @@ export function DiscountManagement() {
           </Table>
 
           {/* Pagination */}
-          {discountData && (
-            <div className="mt-4 flex items-center justify-between">
-              <span className="text-sm text-gray-600">
-                Trang {discountData.metadata.pagination.currentPage} /{' '}
-                {discountData.metadata.pagination.totalPage}
-              </span>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={!discountData.metadata.pagination.hasPreviousPage}
-                  onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-                >
-                  Trang trước
-                </Button>
-                {Array.from(
-                  { length: discountData.metadata.pagination.totalPage },
-                  (_, i) => i + 1,
-                ).map((num) => (
-                  <Button
-                    key={num}
-                    variant={
-                      num === discountData.metadata.pagination.currentPage ? 'default' : 'outline'
-                    }
-                    size="sm"
-                    onClick={() => setPage(num)}
-                  >
-                    {num}
-                  </Button>
-                ))}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={!discountData.metadata.pagination.hasNextPage}
-                  onClick={() => setPage((prev) => prev + 1)}
-                >
-                  Trang sau
-                </Button>
-              </div>
-            </div>
-          )}
+          <div className="mt-4">
+            <Pagination pagination={pagination} />
+          </div>
         </CardContent>
       </Card>
 
@@ -303,10 +244,9 @@ export function DiscountManagement() {
         open={addEditDialogOpen}
         onOpenChange={setAddEditDialogOpen}
         formMode={formMode}
-        defaultValues={discountFormData}
+        discount={editingDiscount}
         onSubmit={handleDiscountSubmit}
         isPending={createDiscount.isPending || updateDiscount.isPending}
-        hotels={hotelData?.data || []}
       />
 
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
@@ -323,44 +263,44 @@ export function DiscountManagement() {
             </DialogHeader>
 
             <div className="flex-1 overflow-y-auto p-6">
-              {selectDiscount && (
+              {selectedDiscount && (
                 <div className="space-y-6">
                   {/* Mức giảm giá & trạng thái */}
                   <div className="flex items-center justify-between">
                     <div>
                       <h2 className="text-2xl font-bold text-gray-900">
-                        Giảm {selectDiscount.amount}%
+                        Giảm {selectedDiscount.amount}%
                       </h2>
                       <p className="mt-1 text-sm text-gray-500">
                         Hạn sử dụng:{' '}
                         <span className="font-medium text-red-600">
-                          {new Date(selectDiscount.expiredTimestamp).toLocaleDateString('vi-VN')}
+                          {new Date(selectedDiscount.expiredTimestamp).toLocaleDateString('vi-VN')}
                         </span>
                       </p>
                     </div>
                     <Badge
                       className={
-                        selectDiscount.state === 'ACTIVE'
+                        selectedDiscount.state === 'ACTIVE'
                           ? 'bg-green-100 text-green-800'
                           : 'bg-gray-200 text-gray-600'
                       }
                     >
-                      {selectDiscount.state === 'ACTIVE' ? 'Đang hoạt động' : 'Ngưng hoạt động'}
+                      {discountStates[selectedDiscount.state]}
                     </Badge>
                   </div>
 
                   {/* Số lượng sử dụng và giới hạn */}
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <Card className="p-4 text-center">
-                      <div className="text-sm text-gray-500">Số lần đã dùng</div>
+                      <div className="text-sm text-gray-500">Số lượng còn lại</div>
                       <div className="text-2xl font-bold text-blue-600">
-                        {selectDiscount.usageCount}
+                        {selectedDiscount.usageCount}
                       </div>
                     </Card>
                     <Card className="p-4 text-center">
-                      <div className="text-sm text-gray-500">Giới hạn người dùng</div>
+                      <div className="text-sm text-gray-500">Giới hạn/người</div>
                       <div className="text-2xl font-bold text-blue-600">
-                        {selectDiscount.maxQualityPerUser}
+                        {selectedDiscount.maxQuantityPerUser}
                       </div>
                     </Card>
                   </div>
@@ -371,20 +311,24 @@ export function DiscountManagement() {
                       Áp dụng cho khách sạn
                     </h3>
                     <ul className="space-y-2">
-                      {selectDiscount.applicableHotels.length > 0 ? (
-                        selectDiscount.applicableHotels.map((hotel) => (
-                          <li
-                            key={hotel.id}
-                            className="flex items-start gap-3 rounded-lg bg-gray-50 p-3"
-                          >
-                            <Image
-                              src={hotel?.images[0].url}
-                              alt={hotel.name}
-                              className="h-12 w-12 rounded object-cover"
-                            />
+                      {selectedDiscount.applicableHotels.length > 0 ? (
+                        selectedDiscount.applicableHotels.map((hotel) => (
+                          <li key={hotel.id} className="flex items-start gap-3 bg-gray-50 p-3">
+                            <div className="relative size-12 shrink-0 overflow-hidden rounded-lg">
+                              <Image
+                                src={hotel?.images[0].url}
+                                alt={hotel.name}
+                                fill
+                                className="object-cover object-center"
+                              />
+                            </div>
                             <div>
-                              <p className="font-semibold text-gray-900">{hotel.name}</p>
-                              <p className="text-sm text-gray-500">{hotel.address}</p>
+                              <p className="line-clamp-1 font-semibold text-gray-900">
+                                {hotel.name}
+                              </p>
+                              <p className="line-clamp-1 text-sm text-gray-500">
+                                {hotel.address}, {hotel.commune}, {hotel.province}
+                              </p>
                             </div>
                           </li>
                         ))
@@ -453,15 +397,9 @@ export function DiscountManagement() {
             <Button
               variant={discountToDelete?.deleteTimestamp ? 'success' : 'danger'}
               onClick={handleConfirmDelete}
-              disabled={deleteDiscount.isPending || restoreDiscount.isPending}
+              loading={deleteDiscount.isPending || restoreDiscount.isPending}
             >
-              {deleteDiscount.isPending || restoreDiscount.isPending
-                ? discountToDelete?.deleteTimestamp
-                  ? 'Đang khôi phục...'
-                  : 'Đang xóa...'
-                : discountToDelete?.deleteTimestamp
-                  ? 'Khôi phục'
-                  : 'Xóa'}
+              {discountToDelete?.deleteTimestamp ? 'Khôi phục' : 'Xóa'}
             </Button>
           </DialogFooter>
         </DialogContent>
