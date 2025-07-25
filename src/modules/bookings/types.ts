@@ -65,6 +65,7 @@ export const bookingsSearchParamsSchema = commonSearchParamsSchema.extend({
   quantity: z.string().optional(),
   minOccupancy: z.string().optional(),
   hotelOwnerId: z.string().optional(),
+  inFuture: z.enum(['all', 'true', 'false']).default('all'),
 });
 
 export type BookingsSearchParams = z.infer<typeof bookingsSearchParamsSchema>;
