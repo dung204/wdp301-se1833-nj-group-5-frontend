@@ -26,6 +26,7 @@ import {
   RoleUpgradeRequestStatus,
   roleUpgradeRequestService,
 } from '@/modules/role-upgrade-requests';
+import { userService } from '@/modules/users';
 
 interface RoleManagementButtonProps {
   userRole: Role;
@@ -38,6 +39,7 @@ export function RoleManagementButton({ userRole, onUpgradeSuccess }: RoleManagem
   const [reason, setReason] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [existingRequest, setExistingRequest] = useState<RoleUpgradeRequest | null>(null);
+  const [currentUserRole, setCurrentUserRole] = useState<Role>(userRole);
 
   const checkExistingRequest = useCallback(async () => {
     try {
@@ -50,15 +52,95 @@ export function RoleManagementButton({ userRole, onUpgradeSuccess }: RoleManagem
     }
   }, []);
 
+  // Function to refresh user data and update cookies
+  const refreshUserData = useCallback(async () => {
+    try {
+      const userProfile = await userService.getUserProfile();
+      const updatedUser = userProfile.data;
+
+      // Update the user cookie with the new role
+      await fetch('/api/auth/set-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: updatedUser.id,
+          role: updatedUser.role,
+          fullName: updatedUser.fullName,
+          gender: updatedUser.gender,
+        }),
+      });
+
+      // Update local state
+      setCurrentUserRole(updatedUser.role);
+
+      return updatedUser.role;
+    } catch (error) {
+      console.error('Failed to refresh user data:', error);
+      return null;
+    }
+  }, []);
+
   // Check for existing request when component mounts
   useEffect(() => {
-    if (userRole === Role.CUSTOMER) {
+    if (currentUserRole === Role.CUSTOMER) {
       checkExistingRequest();
     }
-  }, [userRole, checkExistingRequest]);
+  }, [currentUserRole, checkExistingRequest]);
+
+  // Check for role updates on mount if user role hasn't updated yet
+  useEffect(() => {
+    const checkInitialRoleUpdate = async () => {
+      if (currentUserRole === Role.CUSTOMER) {
+        const newRole = await refreshUserData();
+        // If user was already upgraded but cookies are stale, update immediately
+        if (newRole === Role.HOTEL_OWNER) {
+          toast.success('Chào mừng! Tài khoản của bạn đã được nâng cấp thành công!', {
+            description: 'Bạn hiện đã là chủ khách sạn và có thể quản lý khách sạn.',
+          });
+        }
+      }
+    };
+
+    checkInitialRoleUpdate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run only once on mount
+
+  // Periodically check for role updates when user has an approved request
+  useEffect(() => {
+    let intervalId: NodeJS.Timeout | null = null;
+
+    if (
+      existingRequest &&
+      existingRequest.status === RoleUpgradeRequestStatus.APPROVED &&
+      currentUserRole === Role.CUSTOMER
+    ) {
+      // Check every 5 seconds for role updates
+      intervalId = setInterval(async () => {
+        const newRole = await refreshUserData();
+        if (newRole === Role.HOTEL_OWNER) {
+          // Role has been updated, show success message and reload page
+          toast.success('Tài khoản đã được nâng cấp thành công!', {
+            description: 'Bạn hiện đã là chủ khách sạn và có thể quản lý khách sạn.',
+          });
+
+          // Reload the page to refresh all components with the new role
+          setTimeout(() => {
+            window.location.reload();
+          }, 2000);
+        }
+      }, 5000);
+    }
+
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [existingRequest, currentUserRole]); // refreshUserData is stable, excluded to prevent restarts
 
   // Show manage hotel button for HOTEL_OWNER
-  if (userRole === Role.HOTEL_OWNER) {
+  if (currentUserRole === Role.HOTEL_OWNER) {
     return (
       <Button asChild variant="outline" size="sm" className="gap-2">
         <Link href="/manager/dashboard">
@@ -70,7 +152,7 @@ export function RoleManagementButton({ userRole, onUpgradeSuccess }: RoleManagem
   }
 
   // Only show upgrade button for CUSTOMER role
-  if (userRole !== Role.CUSTOMER) {
+  if (currentUserRole !== Role.CUSTOMER) {
     return null;
   }
 
@@ -178,7 +260,7 @@ export function RoleManagementButton({ userRole, onUpgradeSuccess }: RoleManagem
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="gap-2">
           <Crown className="h-4 w-4" />
-          Bạn cần quản lý khách sạn?
+          Nâng cấp tài khoản
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
