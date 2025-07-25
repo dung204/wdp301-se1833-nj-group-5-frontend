@@ -1,8 +1,8 @@
 'use client';
 
-import { useMutation, useSuspenseInfiniteQuery } from '@tanstack/react-query';
+import { useMutation, useSuspenseInfiniteQuery, useSuspenseQuery } from '@tanstack/react-query';
 import axios from 'axios';
-import { TicketIcon } from 'lucide-react';
+import { Ticket, TicketIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { ComponentProps, Suspense, useEffect, useState } from 'react';
 import { useInView } from 'react-intersection-observer';
@@ -18,7 +18,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/base/components/ui/dialog';
-import { discountService } from '@/modules/discount';
+import { cn } from '@/base/lib';
+import { Discount, DiscountState, discountService } from '@/modules/discount';
 import { DiscountCard, DiscountCardSkeleton } from '@/modules/discount/components/discount-card';
 
 import { CreateBookingSchema } from '../types';
@@ -29,6 +30,21 @@ interface DiscountsCardProps {
 
 export function DiscountsCard({ currentBooking }: DiscountsCardProps) {
   const [discountsDialogOpen, setDiscountsDialogOpen] = useState(false);
+  const {
+    data: { data: discounts },
+  } = useSuspenseQuery({
+    queryKey: ['discounts', 'all', { id: currentBooking.discount }],
+    queryFn: async () => {
+      if (!currentBooking.discount) {
+        return {
+          data: [] as Discount[],
+        };
+      }
+      return discountService.getAllDiscounts({ id: currentBooking.discount });
+    },
+  });
+
+  const discount = discounts[0];
 
   return (
     <>
@@ -49,25 +65,27 @@ export function DiscountsCard({ currentBooking }: DiscountsCardProps) {
             Xem tất cả
           </Button>
         </CardHeader>
-        <CardContent className="flex flex-col items-center gap-2">
-          <p className="text-lg font-bold">
-            {currentBooking.discounts?.length > 0
-              ? `Bạn đã ${currentBooking.discounts.length} áp dụng phiếu giảm giá`
-              : 'Bạn chưa áp dụng phiếu giảm giá nào'}
-          </p>
-          <p>
-            Nhấn{' '}
-            <Button
-              variant="link"
-              size="link"
-              className="text-base font-normal text-blue-500 underline"
-              onClick={() => setDiscountsDialogOpen(true)}
-            >
-              vào đây
-            </Button>{' '}
-            để chọn phiếu giảm giá
-          </p>
-        </CardContent>
+        {!currentBooking.discount ? (
+          <CardContent className="flex flex-col items-center gap-2">
+            <p className="text-lg font-bold">Bạn chưa áp dụng phiếu giảm giá nào</p>
+            <p>
+              Nhấn{' '}
+              <Button
+                variant="link"
+                size="link"
+                className="text-base font-normal text-blue-500 underline"
+                onClick={() => setDiscountsDialogOpen(true)}
+              >
+                vào đây
+              </Button>{' '}
+              để chọn phiếu giảm giá
+            </p>
+          </CardContent>
+        ) : (
+          <div className="px-6" onClick={() => setDiscountsDialogOpen(true)}>
+            <DiscountCard discount={discount} className="cursor-pointer" />
+          </div>
+        )}
       </Card>
       <DiscountsDialog
         currentBooking={currentBooking}
@@ -84,9 +102,9 @@ interface DiscountsDialogProps extends ComponentProps<typeof Dialog> {
 
 function DiscountsDialog({ currentBooking, ...props }: DiscountsDialogProps) {
   const router = useRouter();
-  const [discounts, setDiscounts] = useState<string[]>(currentBooking.discounts || []);
+  const [discount, setDiscount] = useState(currentBooking.discount);
   const { mutate: triggerApplyDiscounts, isPending } = useMutation({
-    mutationFn: () => axios.post('/api/book/set', { ...currentBooking, discounts }),
+    mutationFn: () => axios.post('/api/book/set', { ...currentBooking, discount }),
     onSuccess: () => {
       router.refresh();
       props.onOpenChange?.(false);
@@ -104,9 +122,9 @@ function DiscountsDialog({ currentBooking, ...props }: DiscountsDialogProps) {
         </DialogHeader>
         <Suspense fallback={<DiscountsListSkeleton />}>
           <DiscountsList
-            selectedDiscounts={discounts}
+            selectedDiscount={discount}
             currentBooking={currentBooking}
-            onSelectedDiscountsChange={setDiscounts}
+            onSelectedDiscountChange={setDiscount}
           />
         </Suspense>
         <DialogFooter className="items-end">
@@ -114,7 +132,7 @@ function DiscountsDialog({ currentBooking, ...props }: DiscountsDialogProps) {
             <Button
               variant="outline"
               disabled={isPending}
-              onClick={() => setDiscounts(currentBooking.discounts || [])}
+              onClick={() => setDiscount(currentBooking.discount)}
             >
               Đóng
             </Button>
@@ -130,14 +148,14 @@ function DiscountsDialog({ currentBooking, ...props }: DiscountsDialogProps) {
 
 type DiscountsListProps = {
   currentBooking: CreateBookingSchema;
-  selectedDiscounts: string[];
-  onSelectedDiscountsChange?: (discounts: string[]) => void;
+  selectedDiscount: string | undefined;
+  onSelectedDiscountChange?: (discount: string | undefined) => void;
 };
 
 function DiscountsList({
   currentBooking,
-  selectedDiscounts,
-  onSelectedDiscountsChange,
+  selectedDiscount,
+  onSelectedDiscountChange,
 }: DiscountsListProps) {
   const { ref, inView } = useInView();
   const {
@@ -146,12 +164,13 @@ function DiscountsList({
     fetchNextPage,
     hasNextPage,
   } = useSuspenseInfiniteQuery({
-    queryKey: ['discounts', 'all', { hotelId: currentBooking.hotel }],
+    queryKey: ['discounts', 'all', { hotelId: currentBooking.hotel, state: DiscountState.ACTIVE }],
     queryFn: ({ pageParam }) =>
       discountService.getAllDiscounts({
         hotelId: currentBooking.hotel,
         page: pageParam,
         pageSize: 5,
+        state: DiscountState.ACTIVE,
       }),
     initialPageParam: 1,
     getNextPageParam: (lastPage) =>
@@ -169,21 +188,41 @@ function DiscountsList({
   const discounts = pages.flatMap((page) => page.data);
 
   return (
-    <div className="grow space-y-4 overflow-y-auto">
-      {discounts.map((discount) => (
-        <DiscountCard
-          key={discount.id}
-          discount={discount}
-          withCheckbox
-          checked={selectedDiscounts.includes(discount.id)}
-          onCheckChange={(checked) => {
-            const newDiscounts = checked
-              ? [...selectedDiscounts, discount.id]
-              : selectedDiscounts.filter((id) => id !== discount.id);
-            onSelectedDiscountsChange?.(newDiscounts);
-          }}
-        />
-      ))}
+    <div
+      className={cn('grow space-y-4 overflow-y-auto', {
+        'flex items-center justify-center': discounts.length === 0 && !isFetchingNextPage,
+      })}
+    >
+      {discounts.length === 0 ? (
+        <div className="text-center">
+          <div className="mx-auto max-w-md rounded-2xl bg-white/80 p-12 backdrop-blur-sm">
+            <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100">
+              <Ticket className="h-8 w-8 text-gray-400" />
+            </div>
+            <h3 className="mb-2 text-xl font-semibold text-gray-900">Không có mã giảm giá nào</h3>
+            <p className="mb-6 text-gray-600">
+              Hiện tại không có mã giảm giá nào cho khách sạn này. Hãy kiểm tra lại sau hoặc liên hệ
+              với khách sạn để biết thêm thông tin.
+            </p>
+          </div>
+        </div>
+      ) : (
+        discounts.map((discount) => (
+          <div
+            key={discount.id}
+            className="cursor-pointer"
+            onClick={() =>
+              onSelectedDiscountChange?.(selectedDiscount === discount.id ? undefined : discount.id)
+            }
+          >
+            <DiscountCard
+              key={discount.id}
+              discount={discount}
+              className={cn({ 'bg-success [&_*]:text-white': selectedDiscount === discount.id })}
+            />
+          </div>
+        ))
+      )}
       {hasNextPage && (
         <div ref={ref}>
           <DiscountCardSkeleton />

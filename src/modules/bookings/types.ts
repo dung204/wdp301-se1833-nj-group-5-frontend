@@ -32,7 +32,7 @@ export const bookingSchema = baseEntitySchema.extend({
   quantity: z.number(),
   minOccupancy: z.number(),
   cancelPolicy: z.nativeEnum(CancelPolicy),
-  discounts: z.array(z.string()),
+  discount: z.string().optional(),
   cancelledAt: z.string().optional(),
   refundAmount: z.number().optional(),
   paymentMethod: z.nativeEnum(PaymentMethod),
@@ -88,7 +88,7 @@ export const createBookingSchema = z.object({
     .optional()
     .catch(format(addDays(new Date(), 1), 'yyyy-MM-dd'))
     .default(format(addDays(new Date(), 1), 'yyyy-MM-dd')),
-  discounts: z.array(z.string()).catch([]),
+  discount: z.string().optional(),
   paymentMethod: z.nativeEnum(PaymentMethod).optional(),
 });
 

@@ -32,7 +32,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from '@/base/components/ui/carousel';
-import { discountService } from '@/modules/discount';
+import { DiscountState, discountService } from '@/modules/discount';
 import { DiscountCard, DiscountCardSkeleton } from '@/modules/discount/components/discount-card';
 import { Room, RoomSearchParams } from '@/modules/rooms';
 import { RoomCard, RoomCardSkeleton } from '@/modules/rooms/components/room-card';
@@ -264,9 +264,14 @@ function DiscountsSection({ hotelId }: { hotelId: string }) {
     fetchNextPage,
     hasNextPage,
   } = useSuspenseInfiniteQuery({
-    queryKey: ['discounts', 'all', { hotelId }],
+    queryKey: ['discounts', 'all', { hotelId, state: DiscountState.ACTIVE }],
     queryFn: ({ pageParam }) =>
-      discountService.getAllDiscounts({ hotelId, page: pageParam, pageSize: 3 }),
+      discountService.getAllDiscounts({
+        hotelId,
+        page: pageParam,
+        pageSize: 3,
+        state: DiscountState.ACTIVE,
+      }),
     initialPageParam: 1,
     getNextPageParam: (lastPage) =>
       lastPage.metadata.pagination.hasNextPage
@@ -289,8 +294,6 @@ function DiscountsSection({ hotelId }: { hotelId: string }) {
       }
     });
   }, [api, hasNextPage, isFetchingNextPage, fetchNextPage]);
-
-  if (discounts.length === 0) return <></>;
 
   return (
     <section className="space-y-6">

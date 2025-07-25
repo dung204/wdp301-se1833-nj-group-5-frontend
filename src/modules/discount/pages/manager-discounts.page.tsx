@@ -2,12 +2,10 @@
 
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { Edit, Eye, MoreHorizontal, Plus, RotateCcw, Trash2 } from 'lucide-react';
-import Image from 'next/image';
 import { useState } from 'react';
 
 import { Pagination } from '@/base/components/layout/pagination';
 import { AsyncSelect } from '@/base/components/ui/async-select';
-import { Badge } from '@/base/components/ui/badge';
 import { Button } from '@/base/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/base/components/ui/card';
 import {
@@ -34,6 +32,7 @@ import {
 import { HotelUtils } from '@/modules/hotels/utils/hotel.utils';
 
 import { AddEditDiscountDialog } from '../components/add-edit-discount-dialog';
+import { DiscountDetailsDialog } from '../components/discount-details-dialog';
 import { useDiscountMutations } from '../hooks/use-discount-mutations';
 import { discountService } from '../services/discount.service';
 import {
@@ -249,109 +248,11 @@ export function ManagerDiscountsPage({ searchParams }: ManagerDiscountsPageProps
         isPending={createDiscount.isPending || updateDiscount.isPending}
       />
 
-      <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
-        <DialogContent className="max-h-[95vh] max-w-3xl overflow-y-auto p-0">
-          <div className="flex h-full flex-col">
-            {/* Header */}
-            <DialogHeader className="rounded-t-lg bg-gradient-to-r from-blue-600 to-purple-600 p-6 text-white">
-              <DialogTitle className="flex items-center gap-3 text-xl font-bold">
-                <div className="rounded-full bg-white/20 p-2">
-                  <Eye className="h-5 w-5" />
-                </div>
-                Thông tin chi tiết mã giảm giá
-              </DialogTitle>
-            </DialogHeader>
-
-            <div className="flex-1 overflow-y-auto p-6">
-              {selectedDiscount && (
-                <div className="space-y-6">
-                  {/* Mức giảm giá & trạng thái */}
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h2 className="text-2xl font-bold text-gray-900">
-                        Giảm {selectedDiscount.amount}%
-                      </h2>
-                      <p className="mt-1 text-sm text-gray-500">
-                        Hạn sử dụng:{' '}
-                        <span className="font-medium text-red-600">
-                          {new Date(selectedDiscount.expiredTimestamp).toLocaleDateString('vi-VN')}
-                        </span>
-                      </p>
-                    </div>
-                    <Badge
-                      className={
-                        selectedDiscount.state === 'ACTIVE'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-gray-200 text-gray-600'
-                      }
-                    >
-                      {discountStates[selectedDiscount.state]}
-                    </Badge>
-                  </div>
-
-                  {/* Số lượng sử dụng và giới hạn */}
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <Card className="p-4 text-center">
-                      <div className="text-sm text-gray-500">Số lượng còn lại</div>
-                      <div className="text-2xl font-bold text-blue-600">
-                        {selectedDiscount.usageCount}
-                      </div>
-                    </Card>
-                    <Card className="p-4 text-center">
-                      <div className="text-sm text-gray-500">Giới hạn/người</div>
-                      <div className="text-2xl font-bold text-blue-600">
-                        {selectedDiscount.maxQuantityPerUser}
-                      </div>
-                    </Card>
-                  </div>
-
-                  {/* Danh sách khách sạn áp dụng */}
-                  <div>
-                    <h3 className="mb-3 text-lg font-semibold text-gray-900">
-                      Áp dụng cho khách sạn
-                    </h3>
-                    <ul className="space-y-2">
-                      {selectedDiscount.applicableHotels.length > 0 ? (
-                        selectedDiscount.applicableHotels.map((hotel) => (
-                          <li key={hotel.id} className="flex items-start gap-3 bg-gray-50 p-3">
-                            <div className="relative size-12 shrink-0 overflow-hidden rounded-lg">
-                              <Image
-                                src={hotel?.images[0].url}
-                                alt={hotel.name}
-                                fill
-                                className="object-cover object-center"
-                              />
-                            </div>
-                            <div>
-                              <p className="line-clamp-1 font-semibold text-gray-900">
-                                {hotel.name}
-                              </p>
-                              <p className="line-clamp-1 text-sm text-gray-500">
-                                {hotel.address}, {hotel.commune}, {hotel.province}
-                              </p>
-                            </div>
-                          </li>
-                        ))
-                      ) : (
-                        <p className="text-gray-500 italic">Không áp dụng cho khách sạn nào</p>
-                      )}
-                    </ul>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Footer */}
-            <DialogFooter className="border-t bg-gray-50 p-6">
-              <div className="flex w-full justify-end">
-                <Button variant="outline" onClick={() => setViewDialogOpen(false)}>
-                  Đóng
-                </Button>
-              </div>
-            </DialogFooter>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <DiscountDetailsDialog
+        open={viewDialogOpen}
+        onOpenChange={setViewDialogOpen}
+        discount={selectedDiscount}
+      />
 
       {/* Dialog xác nhận xóa */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
