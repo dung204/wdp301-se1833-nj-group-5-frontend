@@ -25,6 +25,7 @@ import {
 } from '@/base/components/ui/card';
 import { Select } from '@/base/components/ui/select';
 import { Skeleton } from '@/base/components/ui/skeleton';
+import { bookingsService } from '@/modules/bookings/services/bookings.service';
 import { hotelsService } from '@/modules/hotels';
 import { roomsService } from '@/modules/rooms';
 
@@ -54,7 +55,7 @@ export const HotelDashboard = () => {
 
   const { data: bookingSourceData, isLoading: loadingBooking } = useQuery({
     queryKey: ['bookingSource'],
-    queryFn: () => hotelDashboardService.getCalculateAllBooking(),
+    queryFn: () => bookingsService.getAllBookings(),
   });
 
   const { data: dailyRevenueData, isLoading: loadingDaily } = useQuery({
@@ -276,7 +277,7 @@ export const HotelDashboard = () => {
               <Skeleton className="h-6 w-12" />
             ) : (
               <div className="text-3xl font-bold text-yellow-800">
-                {bookingSourceData?.data.totalProcessed ?? 0} booking
+                {bookingSourceData?.metadata.pagination.total ?? 0} booking
               </div>
             )}
           </CardContent>
