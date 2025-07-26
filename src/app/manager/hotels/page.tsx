@@ -15,7 +15,7 @@ export default async function Page({ searchParams }: PageProps) {
 
   await queryClient.prefetchQuery({
     queryKey: ['hotels', 'all', validatedSearchParams],
-    queryFn: () => hotelsService.getAllHotels(validatedSearchParams),
+    queryFn: () => hotelsService.getHotelByAdmin(validatedSearchParams),
   });
 
   return (
