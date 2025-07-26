@@ -243,9 +243,11 @@ export function BookRoomSuccessPage({ bookingId, orderCode }: BookRoomSuccessPag
             </div>
           </CardContent>
           <CardFooter className="gap-4">
-            <Button className="bg-blue-500 text-center text-white shadow-xs hover:bg-blue-500/90 focus-visible:ring-blue-500/20">
-              Xem chi tiết đơn đặt phòng
-            </Button>
+            <Link href="/history-booking">
+              <Button className="bg-blue-500 text-center text-white shadow-xs hover:bg-blue-500/90 focus-visible:ring-blue-500/20">
+                Về trang lịch sử đặt phòng
+              </Button>
+            </Link>
             <Link href="/">
               <Button variant="outline">Về trang chủ</Button>
             </Link>

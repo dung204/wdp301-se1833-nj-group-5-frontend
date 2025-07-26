@@ -1,7 +1,7 @@
 'use client';
 
 import { format } from 'date-fns';
-import { HeartIcon, MapPinIcon, StarIcon } from 'lucide-react';
+import { MapPinIcon, StarIcon } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 
@@ -53,13 +53,6 @@ export function HotelCard({ hotel }: HotelCardProps) {
                 Không có ảnh
               </div>
             )}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute top-2 right-2 h-8 w-8 rounded-full bg-white/80 text-gray-600 hover:bg-white hover:text-red-500"
-            >
-              <HeartIcon className="h-4 w-4" />
-            </Button>
           </div>
 
           {/* Right side - Content */}
@@ -167,11 +160,6 @@ export function HotelCard({ hotel }: HotelCardProps) {
                   </div> */}
 
               <div className="ml-auto flex gap-2">
-                <Button variant="danger" size="sm">
-                  <HeartIcon className="mr-1 h-4 w-4" />
-                  <span className="hidden sm:inline">Thêm vào yêu thích</span>
-                  <span className="inline sm:hidden">Yêu thích</span>
-                </Button>
                 <Button
                   size="sm"
                   className="bg-blue-600 hover:bg-blue-700"
