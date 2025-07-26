@@ -15,6 +15,12 @@ class BookingsService extends HttpClient {
     });
   }
 
+  getBookingById(id: string) {
+    return this.get<SuccessResponse<Booking[]>>(`/bookings/${id}`, {
+      isPrivateRoute: true,
+    });
+  }
+
   createBooking(payload: CreateBookingSchema) {
     return this.post<SuccessResponse<Booking>>('/bookings', payload, {
       isPrivateRoute: true,

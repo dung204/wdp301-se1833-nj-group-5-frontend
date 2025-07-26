@@ -156,7 +156,7 @@ export function BookRoomSuccessPage({ bookingId, orderCode }: BookRoomSuccessPag
     queryKey: ['bookings', 'all', { id: bookingId }],
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    queryFn: () => bookingsService.getAllBookings({ id: bookingId }),
+    queryFn: () => bookingsService.getBookingById(bookingId),
     refetchOnWindowFocus: false,
   });
 
