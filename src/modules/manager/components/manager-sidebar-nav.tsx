@@ -91,7 +91,7 @@ const navItems: NavItem[] = [
     url: '/manager/discounts',
     icon: Percent,
     title: 'Quản lý Khuyến mãi',
-    role: [Role.ADMIN, Role.HOTEL_OWNER],
+    role: [Role.ADMIN],
   },
 ];
 
