@@ -1,5 +1,5 @@
 import { BookingPaymentFailedPage } from '@/modules/bookings';
 
-export default function Page() {
+export default async function Page() {
   return <BookingPaymentFailedPage />;
 }
