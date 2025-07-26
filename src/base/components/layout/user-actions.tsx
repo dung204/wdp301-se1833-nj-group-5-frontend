@@ -46,6 +46,9 @@ export function UserActions({ user }: UserActionsProps) {
                   <Link href="/manager/dashboard">Bảng điều khiển</Link>
                 </DropdownMenuItem>
               )}
+              <DropdownMenuItem asChild>
+                <Link href="/history-booking">Lịch sử đặt phòng</Link>
+              </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem variant="danger" onClick={() => setOpen(true)}>

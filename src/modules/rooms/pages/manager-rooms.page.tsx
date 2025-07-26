@@ -1,10 +1,13 @@
 'use client';
 
 import { useSuspenseQuery } from '@tanstack/react-query';
+import { addDays, differenceInDays, format } from 'date-fns';
 import {
+  ArrowUpCircle,
   Badge,
   Banknote,
   Building2,
+  CalendarIcon,
   DollarSign,
   Edit,
   Eye,
@@ -21,11 +24,12 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { z } from 'zod';
 
 import { Pagination } from '@/base/components/layout/pagination';
 import { Button } from '@/base/components/ui/button';
+import { Calendar } from '@/base/components/ui/calendar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/base/components/ui/card';
 import {
   Carousel,
@@ -48,6 +52,7 @@ import {
   DropdownMenuTrigger,
 } from '@/base/components/ui/dropdown-menu';
 import { Form } from '@/base/components/ui/form';
+import { Popover, PopoverContent, PopoverTrigger } from '@/base/components/ui/popover';
 import { Select } from '@/base/components/ui/select';
 import { Separator } from '@/base/components/ui/separator';
 import {
@@ -58,7 +63,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/base/components/ui/table';
-import { StringUtils } from '@/base/utils';
+import { DateTimeUtils, StringUtils } from '@/base/utils';
 import { HotelUtils } from '@/modules/hotels/utils/hotel.utils';
 
 import { AddEditRoomDialog } from '../components/add-edit-room-dialog';
@@ -74,6 +79,7 @@ const roomFilterSchema = z.object({
     z.coerce.number().min(RoomUtils.DEFAULT_MIN_PRICE, 'Giá tối thiểu không hợp lệ'),
     z.coerce.number().max(RoomUtils.DEFAULT_MAX_PRICE, 'Giá tối đa không hợp lệ'),
   ]),
+  dateRange: z.tuple([z.date().optional(), z.date().optional()]).optional(),
 });
 
 type RoomsPageProps = {
@@ -100,12 +106,20 @@ export function ManagerRoomsPage({ searchParams }: RoomsPageProps) {
       setRoomToDelete(null);
     },
   });
+  const [dateRange, setDateRange] = useState<{
+    from?: Date;
+    to?: Date;
+  }>({
+    from: searchParams.checkIn ? new Date(searchParams.checkIn) : undefined,
+    to: searchParams.checkOut ? new Date(searchParams.checkOut) : undefined,
+  });
 
   const handleApplyFilters = (payload: z.infer<typeof roomFilterSchema>) => {
     const {
       name,
       hotel,
       price: [minPrice, maxPrice],
+      dateRange,
     } = payload;
 
     const url = new URL(window.location.href);
@@ -124,6 +138,11 @@ export function ManagerRoomsPage({ searchParams }: RoomsPageProps) {
     } else {
       url.searchParams.delete('hotel');
     }
+
+    if (dateRange?.[0]) url.searchParams.set('checkIn', format(dateRange?.[0], 'yyyy-MM-dd'));
+    else url.searchParams.delete('checkIn');
+    if (dateRange?.[1]) url.searchParams.set('checkOut', format(dateRange?.[1], 'yyyy-MM-dd'));
+    else url.searchParams.delete('checkOut');
 
     router.push(url.href);
   };
@@ -205,12 +224,13 @@ export function ManagerRoomsPage({ searchParams }: RoomsPageProps) {
 
         <CardContent className="space-y-8">
           <Form
-            className="grid grid-cols-1 gap-8 lg:grid-cols-3"
+            className="grid grid-cols-1 gap-8 lg:grid-cols-2"
             schema={roomFilterSchema}
             defaultValues={{
               name: searchParams.name,
               hotel: searchParams.hotel,
               price: [searchParams.minPrice, searchParams.maxPrice],
+              dateRange: [dateRange.from, dateRange.to],
             }}
             fields={[
               {
@@ -218,7 +238,7 @@ export function ManagerRoomsPage({ searchParams }: RoomsPageProps) {
                 type: 'text',
                 label: 'Tên phòng',
                 placeholder: 'Tìm kiếm phòng...',
-                className: 'self-baseline',
+                className: 'self-baseline col-span-1 row-start-1',
                 render: ({ Label, Control }) => (
                   <>
                     <Label className="text-base font-semibold text-gray-700" />
@@ -233,7 +253,7 @@ export function ManagerRoomsPage({ searchParams }: RoomsPageProps) {
                 ...HotelUtils.getHotelsByAdminAsyncSelectOptions('name'),
                 multiple: false,
                 clearable: true,
-                className: 'self-baseline',
+                className: 'self-baseline col-span-1 row-start-1',
                 render: ({ Label, Control }) => (
                   <>
                     <Label className="text-base font-semibold text-gray-700" />
@@ -241,6 +261,7 @@ export function ManagerRoomsPage({ searchParams }: RoomsPageProps) {
                   </>
                 ),
               },
+
               {
                 name: 'price',
                 type: 'slider',
@@ -250,13 +271,80 @@ export function ManagerRoomsPage({ searchParams }: RoomsPageProps) {
                 min: RoomUtils.DEFAULT_MIN_PRICE,
                 max: RoomUtils.DEFAULT_MAX_PRICE,
                 step: RoomUtils.PRICE_RANGE,
-                className: 'space-y-4',
+                className: 'self-baseline col-span-1 row-start-2',
                 numberFormat: (value) => StringUtils.formatCurrency(value.toString()),
                 render: ({ Label, Control }) => (
                   <>
                     <Label className="text-base font-semibold text-gray-700" />
                     <Control />
                   </>
+                ),
+              },
+              {
+                name: 'dateRange',
+                type: 'date',
+                label: 'Khoảng ngày nhận/trả phòng',
+                className: 'self-baseline col-span-1 row-start-2',
+                render: ({ Label }: { Label: React.ComponentType<{ className?: string }> }) => (
+                  <div className="space-y-2">
+                    <Label className="text-base font-semibold text-gray-700" />
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <div className="flex cursor-pointer items-center justify-between rounded-lg border border-gray-300 bg-white px-4 py-3 shadow-sm transition hover:shadow-md">
+                          <div className="flex w-1/2 items-center space-x-2 border-r pr-4">
+                            <CalendarIcon className="h-4 w-4 text-gray-500" />
+                            <div>
+                              <div className="text-sm font-medium text-gray-800">
+                                {dateRange.from
+                                  ? DateTimeUtils.formatDay(dateRange.from)
+                                  : 'Chọn ngày'}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                {dateRange.from ? DateTimeUtils.formatWeekday(dateRange.from) : ''}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex w-1/2 items-center space-x-2 pl-4">
+                            <CalendarIcon className="h-4 w-4 text-gray-500" />
+                            <div>
+                              <div className="text-sm font-medium text-gray-800">
+                                {dateRange.to ? DateTimeUtils.formatDay(dateRange.to) : 'Chọn ngày'}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                {dateRange.to ? DateTimeUtils.formatWeekday(dateRange.to) : ''}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </PopoverTrigger>
+                      <PopoverContent className="mt-1 w-auto rounded-lg border bg-white p-0 shadow-lg">
+                        <Calendar
+                          locale={DateTimeUtils.dateTimeLocale}
+                          mode="range"
+                          selected={{ from: dateRange.from, to: dateRange.to }}
+                          onSelect={(range) => {
+                            if (
+                              range?.from &&
+                              range?.to &&
+                              differenceInDays(range.to, range.from) < 1
+                            ) {
+                              setDateRange({
+                                from: range.from,
+                                to: addDays(range.from ?? new Date(), 1),
+                              });
+                              return;
+                            }
+                            setDateRange({
+                              from: range?.from ?? undefined,
+                              to: range?.to ?? undefined,
+                            });
+                          }}
+                          numberOfMonths={2}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
                 ),
               },
             ]}
@@ -268,7 +356,12 @@ export function ManagerRoomsPage({ searchParams }: RoomsPageProps) {
                 </Button>
               </div>
             )}
-            onSuccessSubmit={handleApplyFilters}
+            onSuccessSubmit={(payload) => {
+              handleApplyFilters({
+                ...payload,
+                dateRange: [dateRange.from, dateRange.to],
+              });
+            }}
           />
         </CardContent>
       </Card>
@@ -310,6 +403,7 @@ export function ManagerRoomsPage({ searchParams }: RoomsPageProps) {
                     <TableHead className="font-semibold">Giá một đêm</TableHead>
                     <TableHead className="font-semibold">Số lượng người</TableHead>
                     <TableHead className="font-semibold">Số phòng tối đa</TableHead>
+                    <TableHead className="font-semibold">Số Lượt booking</TableHead>
                     <TableHead className="font-semibold">Hành động</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -352,6 +446,22 @@ export function ManagerRoomsPage({ searchParams }: RoomsPageProps) {
                         <div className="flex items-center text-gray-600">
                           <UsersRound className="mr-1 h-4 w-4" />
                           <span className="text-sm">{room.maxQuantity}</span>
+                        </div>
+                      </TableCell>
+
+                      <TableCell>
+                        <div className="space-y-1">
+                          {/* <div className="flex items-center text-sm">
+                            <ArrowDownCircle className="mr-1 h-3 w-3 text-green-600" />
+                            Tổng số phòng: {room.availability.total}
+                          </div> */}
+                          <div className="flex items-center text-sm">
+                            <ArrowUpCircle className="mr-1 h-3 w-3 text-red-600" />
+                            Tổng số lượt đặt phòng:{' '}
+                            <span className="ml-1 font-bold text-red-600">
+                              {room.availability.booked}
+                            </span>
+                          </div>
                         </div>
                       </TableCell>
 

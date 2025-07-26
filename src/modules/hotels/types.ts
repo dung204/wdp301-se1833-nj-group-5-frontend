@@ -25,6 +25,8 @@ export const managerHotelSearchParamsSchema = commonSearchParamsSchema.extend({
   address: z.string().trim().optional(),
   minRating: z.coerce.number().int().min(0).max(5).optional().catch(undefined),
   maxRating: z.coerce.number().int().min(0).max(5).optional().catch(undefined),
+  checkIn: z.string().optional(),
+  checkOut: z.string().optional(),
   minPrice: z.coerce
     .number()
     .nonnegative()
@@ -84,15 +86,32 @@ export const hotelSchema = baseEntitySchema.extend({
   rating: z.number(),
   services: z.array(z.string()),
   cancelPolicy: z.nativeEnum(CancelPolicy),
+  rooms: z.object({
+    totalRooms: z.number().min(0),
+    bookedRooms: z.number().min(0),
+    availableRooms: z.number().min(0),
+  }),
 });
 
 export type Hotel = z.infer<typeof hotelSchema>;
 
 export const createHotelSchema = z.object({
-  name: z.string().trim().nonempty('Tên khách sạn không được để trống'),
+  name: z
+    .string()
+    .trim()
+    .nonempty('Tên khách sạn không được để trống')
+    .regex(/^[\p{L}\p{N}\s.,'-]+$/u, 'Tên khách sạn không được chứa ký tự đặc biệt'),
   province: z.string().trim().nonempty('Vui lòng chọn tỉnh/thành phố'),
-  commune: z.string().trim().nonempty('Vui lòng chọn xã/phường'),
-  address: z.string().trim().nonempty('Địa chỉ không được để trống'),
+  commune: z
+    .string()
+    .trim()
+    .nonempty('Vui lòng chọn xã/phường')
+    .regex(/^[\p{L}\p{N}\s.,'-]+$/u, 'Địa chỉ không được chứa ký tự đặc biệt'),
+  address: z
+    .string()
+    .trim()
+    .nonempty('Địa chỉ không được để trống')
+    .regex(/^[\p{L}\p{N}\s.,'-]+$/u, 'Tên khách sạn không được chứa ký tự đặc biệt'),
   description: z.string().trim().nonempty('Mô tả không được để trống'),
   phoneNumber: z
     .string()

@@ -1,12 +1,16 @@
 'use client';
 
 import { useSuspenseQuery } from '@tanstack/react-query';
+import { addDays, differenceInDays, format } from 'date-fns';
 import {
   ArrowDown,
   ArrowUp,
   ArrowUpDown,
+  BedDouble,
   Building2,
+  CalendarIcon,
   Clock,
+  DoorClosed,
   Edit,
   Eye,
   FilterIcon,
@@ -28,6 +32,7 @@ import { z } from 'zod';
 import { Pagination } from '@/base/components/layout/pagination';
 import { Badge } from '@/base/components/ui/badge';
 import { Button } from '@/base/components/ui/button';
+import { Calendar } from '@/base/components/ui/calendar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/base/components/ui/card';
 import {
   Carousel,
@@ -52,6 +57,7 @@ import {
 } from '@/base/components/ui/dropdown-menu';
 import { Form } from '@/base/components/ui/form';
 import { Label } from '@/base/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/base/components/ui/popover';
 import { Select } from '@/base/components/ui/select';
 import { Separator } from '@/base/components/ui/separator';
 import {
@@ -90,6 +96,7 @@ const hotelFilterSchema = z.object({
     z.coerce.number().max(HotelUtils.DEFAULT_MAX_PRICE),
   ]),
   cancelPolicy: z.nativeEnum(CancelPolicy).optional(),
+  dateRange: z.tuple([z.date().optional(), z.date().optional()]).optional(),
 });
 
 export function ManagerHotelsPage({ searchParams }: ManagerHotelsPageProps) {
@@ -112,11 +119,20 @@ export function ManagerHotelsPage({ searchParams }: ManagerHotelsPageProps) {
     queryFn: () => hotelsService.getHotelByAdmin(searchParams),
   });
 
+  const [dateRange, setDateRange] = useState<{
+    from?: Date;
+    to?: Date;
+  }>({
+    from: searchParams.checkIn ? new Date(searchParams.checkIn) : undefined,
+    to: searchParams.checkOut ? new Date(searchParams.checkOut) : undefined,
+  });
+
   const handleApplyFilters = (payload: z.infer<typeof hotelFilterSchema>) => {
     const {
       name,
       cancelPolicy,
       price: [minPrice, maxPrice],
+      dateRange,
     } = payload;
     const url = new URL(window.location.href);
 
@@ -134,6 +150,11 @@ export function ManagerHotelsPage({ searchParams }: ManagerHotelsPageProps) {
     } else {
       url.searchParams.delete('cancelPolicy');
     }
+
+    if (dateRange?.[0]) url.searchParams.set('checkIn', format(dateRange?.[0], 'yyyy-MM-dd'));
+    else url.searchParams.delete('checkIn');
+    if (dateRange?.[1]) url.searchParams.set('checkOut', format(dateRange?.[1], 'yyyy-MM-dd'));
+    else url.searchParams.delete('checkOut');
 
     router.push(url.href);
   };
@@ -245,38 +266,21 @@ export function ManagerHotelsPage({ searchParams }: ManagerHotelsPageProps) {
 
         <CardContent>
           <Form
-            className="grid grid-cols-1 gap-6 md:grid-cols-3"
+            className="grid grid-cols-1 gap-x-6 gap-y-6 md:grid-cols-2"
             schema={hotelFilterSchema}
             defaultValues={{
               name: searchParams.name,
               price: [searchParams.minPrice, searchParams.maxPrice],
               cancelPolicy: searchParams.cancelPolicy,
+              dateRange: [dateRange.from, dateRange.to],
             }}
             fields={[
               {
                 name: 'name',
                 type: 'text',
                 label: 'Tên khách sạn',
-                className: 'self-baseline',
+                className: 'self-baseline col-span-1 row-start-1',
                 placeholder: 'Nhập tên khách sạn',
-                render: ({ Label, Control }) => (
-                  <>
-                    <Label className="text-base font-semibold text-gray-700" />
-                    <Control />
-                  </>
-                ),
-              },
-              {
-                name: 'price',
-                type: 'slider',
-                label: 'Khoảng giá',
-                className: 'space-y-4',
-                required: false,
-                range: true,
-                min: HotelUtils.DEFAULT_MIN_PRICE,
-                max: HotelUtils.DEFAULT_MAX_PRICE,
-                step: 50_000,
-                numberFormat: (value) => StringUtils.formatCurrency(value.toString()),
                 render: ({ Label, Control }) => (
                   <>
                     <Label className="text-base font-semibold text-gray-700" />
@@ -288,7 +292,7 @@ export function ManagerHotelsPage({ searchParams }: ManagerHotelsPageProps) {
                 name: 'cancelPolicy',
                 type: 'select',
                 label: 'Chính sách hủy phòng',
-                className: 'self-baseline',
+                className: 'self-baseline col-span-1 row-start-1',
                 required: false,
                 options: Object.entries(cancelPolicies).map(([value, label]) => ({
                   value,
@@ -304,6 +308,92 @@ export function ManagerHotelsPage({ searchParams }: ManagerHotelsPageProps) {
                   </>
                 ),
               },
+              {
+                name: 'price',
+                type: 'slider',
+                label: 'Khoảng giá',
+                className: 'self-baseline col-span-1 row-start-2',
+                required: false,
+                range: true,
+                min: HotelUtils.DEFAULT_MIN_PRICE,
+                max: HotelUtils.DEFAULT_MAX_PRICE,
+                step: 50_000,
+                numberFormat: (value) => StringUtils.formatCurrency(value.toString()),
+                render: ({ Label, Control }) => (
+                  <>
+                    <Label className="text-base font-semibold text-gray-700" />
+                    <Control />
+                  </>
+                ),
+              },
+              {
+                name: 'dateRange',
+                type: 'date',
+                label: 'Khoảng ngày nhận/trả phòng',
+                className: 'self-baseline col-span-1 row-start-2',
+
+                render: ({ Label }: { Label: React.ComponentType<{ className?: string }> }) => (
+                  <div className="space-y-2">
+                    <Label className="text-base font-semibold text-gray-700" />
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <div className="flex cursor-pointer items-center justify-between rounded-lg border border-gray-300 bg-white px-4 py-3 shadow-sm transition hover:shadow-md">
+                          <div className="flex w-1/2 items-center space-x-2 border-r pr-4">
+                            <CalendarIcon className="h-4 w-4 text-gray-500" />
+                            <div>
+                              <div className="text-sm font-medium text-gray-800">
+                                {dateRange.from
+                                  ? DateTimeUtils.formatDay(dateRange.from)
+                                  : 'Chọn ngày'}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                {dateRange.from ? DateTimeUtils.formatWeekday(dateRange.from) : ''}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex w-1/2 items-center space-x-2 pl-4">
+                            <CalendarIcon className="h-4 w-4 text-gray-500" />
+                            <div>
+                              <div className="text-sm font-medium text-gray-800">
+                                {dateRange.to ? DateTimeUtils.formatDay(dateRange.to) : 'Chọn ngày'}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                {dateRange.to ? DateTimeUtils.formatWeekday(dateRange.to) : ''}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </PopoverTrigger>
+                      <PopoverContent className="mt-1 w-auto rounded-lg border bg-white p-0 shadow-lg">
+                        <Calendar
+                          locale={DateTimeUtils.dateTimeLocale}
+                          mode="range"
+                          selected={{ from: dateRange.from, to: dateRange.to }}
+                          onSelect={(range) => {
+                            if (
+                              range?.from &&
+                              range?.to &&
+                              differenceInDays(range.to, range.from) < 1
+                            ) {
+                              setDateRange({
+                                from: range.from,
+                                to: addDays(range.from ?? new Date(), 1),
+                              });
+                              return;
+                            }
+                            setDateRange({
+                              from: range?.from ?? undefined,
+                              to: range?.to ?? undefined,
+                            });
+                          }}
+                          numberOfMonths={2}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                ),
+              },
             ]}
             renderSubmitButton={(Button) => (
               <div className="col-span-3 flex items-center justify-center">
@@ -313,7 +403,12 @@ export function ManagerHotelsPage({ searchParams }: ManagerHotelsPageProps) {
                 </Button>
               </div>
             )}
-            onSuccessSubmit={handleApplyFilters}
+            onSuccessSubmit={(payload) => {
+              handleApplyFilters({
+                ...payload,
+                dateRange: [dateRange.from, dateRange.to],
+              });
+            }}
           />
         </CardContent>
       </Card>
@@ -374,8 +469,8 @@ export function ManagerHotelsPage({ searchParams }: ManagerHotelsPageProps) {
                     >
                       <div className="flex items-center">Giá {getSortIcon('price')}</div>
                     </TableHead>
-
-                    <TableHead className="font-semibold">Chính sách</TableHead>
+                    <TableHead className="font-semibold">Tổng số phòng</TableHead>
+                    <TableHead className="font-semibold">Số phòng được đặt</TableHead>
                     <TableHead className="font-semibold">Check-in</TableHead>
                     <TableHead className="font-semibold">Check-out</TableHead>
                     <TableHead className="text-center font-semibold">Hành động</TableHead>
@@ -405,11 +500,21 @@ export function ManagerHotelsPage({ searchParams }: ManagerHotelsPageProps) {
                           {hotel?.priceHotel.toLocaleString('vi-VN')}đ
                         </div>
                       </TableCell>
+
                       <TableCell>
                         <div className="flex items-center text-gray-600">
-                          {cancelPolicies[hotel.cancelPolicy]}
+                          <BedDouble className="mr-1 h-4 w-4" />
+                          {hotel?.rooms.totalRooms} phòng
                         </div>
                       </TableCell>
+
+                      <TableCell>
+                        <div className="flex items-center text-gray-600">
+                          <DoorClosed className="mr-1 h-4 w-4" />
+                          {hotel?.rooms.bookedRooms} phòng
+                        </div>
+                      </TableCell>
+
                       <TableCell>
                         <div className="flex items-center text-gray-600">
                           <Clock className="mr-1 h-4 w-4" />
