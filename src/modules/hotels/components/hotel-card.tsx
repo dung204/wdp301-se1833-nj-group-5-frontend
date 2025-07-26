@@ -96,29 +96,37 @@ export function HotelCard({ hotel }: HotelCardProps) {
               </div>
 
               {/* Check-in/out times */}
-              <div className="space-y-2 rounded-lg lg:min-w-[200px]">
-                <div className="flex items-center">
-                  <span className="w-20 text-sm text-gray-600">Check-in:</span>
-                  <span className="text-sm font-medium">
-                    {new Date(hotel.checkinTime.from).toLocaleTimeString('vi-VN', {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                    -
-                    {new Date(hotel.checkinTime.to).toLocaleTimeString('vi-VN', {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </span>
+              <div className="flex flex-col justify-between space-y-2 rounded-lg lg:min-w-[200px]">
+                <div className="text-right">
+                  <div className="mb-1 text-3xl font-bold text-blue-600">
+                    {hotel.priceHotel?.toLocaleString('vi-VN')}₫
+                  </div>
+                  <div className="text-sm text-gray-500">/ đêm</div>
                 </div>
-                <div className="flex items-center">
-                  <span className="w-20 text-sm text-gray-600">Check-out:</span>
-                  <span className="text-sm font-medium">
-                    {new Date(hotel.checkoutTime).toLocaleTimeString('vi-VN', {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </span>
+                <div>
+                  <div className="flex items-center">
+                    <span className="w-20 text-sm text-gray-600">Check-in:</span>
+                    <span className="text-sm font-medium">
+                      {new Date(hotel.checkinTime.from).toLocaleTimeString('vi-VN', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                      -
+                      {new Date(hotel.checkinTime.to).toLocaleTimeString('vi-VN', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </span>
+                  </div>
+                  <div className="flex items-center">
+                    <span className="w-20 text-sm text-gray-600">Check-out:</span>
+                    <span className="text-sm font-medium">
+                      {new Date(hotel.checkoutTime).toLocaleTimeString('vi-VN', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>

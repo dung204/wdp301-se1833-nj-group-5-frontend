@@ -3,7 +3,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { AxiosError, HttpStatusCode } from 'axios';
 import { AlertCircleIcon } from 'lucide-react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 
 import { Alert, AlertDescription, AlertTitle } from '@/base/components/ui/alert';
 import { Form } from '@/base/components/ui/form';
@@ -16,7 +16,6 @@ interface LoginFormProps {
 }
 
 export function LoginForm({ onLoginSuccess }: LoginFormProps) {
-  const router = useRouter();
   const searchParams = useSearchParams();
 
   const {
@@ -31,12 +30,12 @@ export function LoginForm({ onLoginSuccess }: LoginFormProps) {
         const redirectUrl = new URL(redirect as string);
 
         if (redirectUrl.origin === window.location.origin) {
-          router.replace(redirectUrl.href);
+          window.location.replace(redirectUrl.href);
           return;
         }
       }
 
-      router.replace('/');
+      window.location.replace('/');
       onLoginSuccess?.();
     },
   });

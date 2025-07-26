@@ -14,6 +14,7 @@ import {
   AlertDialogTitle,
 } from '@/base/components/ui/alert-dialog';
 import { buttonVariantsFn } from '@/base/components/ui/button';
+import { RouteUtils } from '@/base/utils';
 
 import { authService } from '../services/auth.service';
 
@@ -23,11 +24,7 @@ export function ConfirmLogoutDialog(props: ComponentProps<typeof AlertDialog>) {
   const { mutate: triggerLogout } = useMutation({
     mutationFn: () => authService.logout(),
     onSuccess: () => {
-      if (
-        pathname.startsWith('/manager') ||
-        pathname.startsWith('/profile') ||
-        pathname.startsWith('/favorites')
-      ) {
+      if (RouteUtils.isManagerRoute(pathname) || RouteUtils.isManagerRoute(pathname)) {
         window.location.href = '/';
       } else {
         window.location.reload();
