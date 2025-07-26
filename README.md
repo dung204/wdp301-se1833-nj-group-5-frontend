@@ -1,4 +1,4 @@
-# WDP301 - SE1833-NJ - Group 5 - Project
+# WDP301 - SE1833-NJ - Group 5 - Project - travelbooking.com
 
 ## Table of Contents
 
@@ -9,7 +9,17 @@
 
 ## 1. Description
 
-Updating...
+travelbooking.com is a travel booking website that allows users to search for and book hotels.
+
+## 2. Authors
+
+This project is developed by Group 5, class SE1833-NJ of the WDP301 (Web Development Project) subject at FPT University. The group members are:
+
+- Hồ Anh Dũng - HE181529 (@dung204)
+- Hoàng Gia Trọng - HE172557 (@tronghghe172557)
+- Vũ Lương Bảo - HE172612 (@Baovu2003)
+- Nguyễn Hữu Tâm - HE187049 (@Gentle226)
+- Nguyễn Quốc Triệu - HE176532 (@NguyenQuocTrieuQP1206)
 
 ## 2. Frameworks/Libraries/Tools Used
 
@@ -48,7 +58,7 @@ pnpm install --frozen-lockfile
 
 > Note: the `--frozen-lockfile` flag ensures that the `pnpm-lock.yaml` file is not modified during installation. This is useful for CI/CD environments where you want to ensure that the exact same dependencies are installed every time.
 
-3.
+3. Create a `.env` file in the root directory of the project. You can use the `.env.example` file as a template. Make sure to fill in the required environment variables.
 
 4. Run the development server:
 

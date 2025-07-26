@@ -30,8 +30,8 @@ export const Primary: Story = {
   name: 'Form',
   args: {
     schema: z.object({
-      username: z.string().nonempty('Username is required'),
-      password: z.string().min(8, 'Password must be at least 8 characters long'),
+      username: z.string().trim().nonempty('Username is required'),
+      password: z.string().trim().min(8, 'Password must be at least 8 characters long'),
       language: z.enum(['en', 'vi'], { message: 'Language is required' }),
     }),
     fields: [

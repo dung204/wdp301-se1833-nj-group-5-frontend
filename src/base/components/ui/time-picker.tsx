@@ -120,7 +120,9 @@ function TimePickerInput12h(
     Required<Pick<TimeInputProps, 'date' | 'onDateChange'>> & { onSetToNow?: () => void },
 ) {
   const t = useTranslations('base.components.TimePicker');
-  const [period, setPeriod] = useState<Period>(format(props.date, 'aa') as Period);
+  const [period, setPeriod] = useState<Period>(
+    !props.date ? 'AM' : (format(props.date, 'aa') as Period),
+  );
 
   const minuteRef = useRef<HTMLInputElement>(null);
   const hourRef = useRef<HTMLInputElement>(null);
@@ -404,12 +406,13 @@ function TimePeriodSelect({
   return (
     <div className="flex items-center">
       <Select
+        multiple={false}
         options={[
           { value: 'AM', label: 'AM' },
           { value: 'PM', label: 'PM' },
         ]}
         value={period}
-        onChange={(value: string) => handleValueChange(value as Period)}
+        onChange={(value: string | undefined) => handleValueChange(value as Period)}
         disabled={disabled || readOnly}
         searchable={false}
         triggerClassName="h-10"

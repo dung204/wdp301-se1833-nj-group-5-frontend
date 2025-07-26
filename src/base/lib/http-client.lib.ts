@@ -18,12 +18,8 @@ export interface CustomInternalAxiosRequestConfig extends InternalAxiosRequestCo
 export class HttpClient {
   private readonly axiosInstance: AxiosInstance;
 
-  constructor(
-    baseURL = '/api',
-    { headers, ...otherAxiosConfig }: Omit<CreateAxiosDefaults, 'baseURL'> = {},
-  ) {
+  constructor({ headers, ...otherAxiosConfig }: Omit<CreateAxiosDefaults, 'baseURL'> = {}) {
     this.axiosInstance = axios.create({
-      baseURL,
       headers: {
         'Content-Type': 'application/json',
         ...headers,
@@ -39,6 +35,12 @@ export class HttpClient {
   protected async onSuccessRequest(config: CustomInternalAxiosRequestConfig) {
     if (config.isPrivateRoute) {
       config.headers.set('Is-Private-Route', 'true');
+      config.baseURL = '/api';
+    } else {
+      config.baseURL =
+        typeof window !== undefined
+          ? (await import('../config/env-client.config')).envClient.NEXT_PUBLIC_API_URL
+          : (await import('../config/env-server.config')).envServer.API_URL;
     }
     return config;
   }

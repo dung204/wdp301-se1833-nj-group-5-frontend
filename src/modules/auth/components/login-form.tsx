@@ -1,9 +1,9 @@
 'use client';
 
 import { useMutation } from '@tanstack/react-query';
-import axios, { AxiosError } from 'axios';
-import { InfoIcon } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { AxiosError, HttpStatusCode } from 'axios';
+import { AlertCircleIcon } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 import { Alert, AlertDescription, AlertTitle } from '@/base/components/ui/alert';
 import { Form } from '@/base/components/ui/form';
@@ -16,49 +16,65 @@ interface LoginFormProps {
 }
 
 export function LoginForm({ onLoginSuccess }: LoginFormProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   const {
-    mutateAsync: triggerLogin,
+    mutate: triggerLogin,
     isPending,
     error,
   } = useMutation({
     mutationFn: (payload: LoginSchema) => authService.login(payload),
-    onSuccess: async ({ data }) => {
-      await axios.post('/api/auth/set-cookie', { data });
+    onSuccess: async () => {
+      const redirect = searchParams.get('redirect');
+      if (URL.canParse(redirect as string)) {
+        const redirectUrl = new URL(redirect as string);
+
+        if (redirectUrl.origin === window.location.origin) {
+          router.replace(redirectUrl.href);
+          return;
+        }
+      }
+
+      router.replace('/');
       onLoginSuccess?.();
     },
   });
 
-  const i18nNamespace = 'modules.auth.components.LoginForm';
-  const t = useTranslations(i18nNamespace);
-
   return (
     <div className="space-y-6">
-      {error instanceof AxiosError && (
-        <Alert variant="danger">
-          <InfoIcon className="size-4" />
-          <AlertTitle>Login failed</AlertTitle>
+      {error && (
+        <Alert variant="danger" className="bg-danger/10">
+          <AlertCircleIcon />
+          <AlertTitle>Không thể đăng nhập</AlertTitle>
           <AlertDescription>
-            {t(`errors.${error.status}` as Parameters<typeof t>[0])}
+            {error instanceof AxiosError && error.status === HttpStatusCode.Unauthorized
+              ? 'Email hoặc mật khẩu không chính xác.'
+              : 'Đã xảy ra lỗi bất ngờ khi đăng ký. Vui lòng thử lại sau.'}
           </AlertDescription>
         </Alert>
       )}
       <Form
-        className="flex flex-col gap-6"
-        i18nNamespace={i18nNamespace}
+        className="flex flex-col gap-4"
+        loading={isPending}
         schema={loginSchema}
         fields={[
           {
             name: 'email',
             type: 'text',
+            label: 'Email',
+            placeholder: '',
             disabled: isPending,
           },
           {
             name: 'password',
             type: 'password',
+            label: 'Mật khẩu',
+            placeholder: '',
             disabled: isPending,
           },
         ]}
-        renderSubmitButton={(Button) => <Button>Login</Button>}
+        renderSubmitButton={(Button) => <Button>Đăng nhập</Button>}
         onSuccessSubmit={(data) => triggerLogin(data)}
       />
     </div>

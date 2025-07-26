@@ -2,7 +2,7 @@
 
 import { Check, ChevronsUpDown } from 'lucide-react';
 import * as React from 'react';
-import { useId, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 
 import { Button } from '@/base/components/ui/button';
 import {
@@ -15,6 +15,7 @@ import {
 } from '@/base/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/base/components/ui/popover';
 import { cn } from '@/base/lib';
+import { StringUtils } from '@/base/utils';
 
 export type SelectOption = {
   value: string;
@@ -54,7 +55,7 @@ type SelectProps = {
       /** Currently selected value */
       value?: string;
       /** Callback when selection changes */
-      onChange?: (value: string) => void;
+      onChange?: (value: string | undefined) => void;
     }
   | {
       /** Allow the select to select multiple values */
@@ -87,7 +88,7 @@ export function Select({
     if (value && !multiple) {
       return value as string;
     }
-    return null;
+    return undefined;
   });
   const [selectedValues, setSelectedValues] = useState(() => {
     if (value && multiple) {
@@ -95,31 +96,46 @@ export function Select({
     }
     return [];
   });
-  const [selectedOption, setSelectedOption] = useState<SelectOption | null>(() => {
-    if (value && !multiple) {
+  const [selectedOption, setSelectedOption] = useState<SelectOption | undefined>(() => {
+    if (value && !multiple && options.length > 0) {
       const selected = options.find((option) => option.value === value);
-      return selected || null;
+      return selected;
     }
-
-    return null;
+    return undefined;
   });
   const [selectedOptions, setSelectedOptions] = useState<SelectOption[]>(() => {
-    if (value && multiple) {
+    if (value && multiple && options.length > 0) {
       const selected = options.filter((option) => (value as string[]).includes(option.value));
       return selected;
     }
-
     return [];
   });
   const [searchTerm, setSearchTerm] = useState('');
 
   const id = useId();
 
+  // Sync internal state with prop values
+  useEffect(() => {
+    if (!multiple) {
+      setSelectedValue(value as string | undefined);
+      const newSelectedOption = value
+        ? options.find((option) => option.value === value)
+        : undefined;
+      setSelectedOption(newSelectedOption);
+    } else {
+      setSelectedValues((value as string[]) || []);
+      const newSelectedOptions = value
+        ? options.filter((option) => (value as string[]).includes(option.value))
+        : [];
+      setSelectedOptions(newSelectedOptions);
+    }
+  }, [value, options, multiple]);
+
   const handleSelect = (currentValue: string) => {
     if (!multiple) {
-      const newValue = clearable && currentValue === selectedValue ? '' : currentValue;
+      const newValue = clearable && currentValue === selectedValue ? undefined : currentValue;
       setSelectedValue(newValue);
-      setSelectedOption(options.find((option) => option.value === newValue) || null);
+      setSelectedOption(newValue ? options.find((option) => option.value === newValue) : undefined);
       onChange?.(newValue);
       setOpen(false);
       return;
@@ -141,7 +157,7 @@ export function Select({
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={setOpen} modal={true}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
@@ -190,7 +206,7 @@ export function Select({
           <ChevronsUpDown className="opacity-50" size={10} />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className={cn('w-[--radix-popover-trigger-width] p-0', className)}>
+      <PopoverContent className={cn('w-(--radix-popover-trigger-width) p-0', className)}>
         <Command shouldFilter={false}>
           {searchable && (
             <div className="relative w-full border-b">
@@ -211,7 +227,9 @@ export function Select({
                 .filter(
                   (option) =>
                     searchTerm === '' ||
-                    option.label.toLowerCase().includes(searchTerm.toLowerCase()),
+                    StringUtils.unaccent(option.label)
+                      .toLowerCase()
+                      .includes(StringUtils.unaccent(searchTerm).toLowerCase()),
                 )
                 .map((option) => (
                   <CommandItem
