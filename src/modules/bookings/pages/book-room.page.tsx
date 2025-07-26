@@ -53,7 +53,7 @@ export function BookRoomPage({ currentBooking }: BookRoomPageProps) {
         return;
       }
 
-      router.push(`/book/success?id=${createdBooking.id}`);
+      router.push(`/book/success/${createdBooking.id}`);
     },
   });
 

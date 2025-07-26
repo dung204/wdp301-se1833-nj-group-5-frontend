@@ -30,9 +30,13 @@ export function TotalPriceCard({ currentBooking }: TotalPriceCardProps) {
   const {
     data: { data: discounts },
   } = useSuspenseQuery({
+    // eslint-disable-next-line @tanstack/query/exhaustive-deps
     queryKey: ['discounts', 'all', { id: currentBooking.discount }],
     queryFn: async () => {
-      if (!currentBooking.discount) {
+      if (
+        !currentBooking.discount ||
+        (Array.isArray(currentBooking.discount) && currentBooking.discount.length === 0)
+      ) {
         return {
           data: [] as Discount[],
         };

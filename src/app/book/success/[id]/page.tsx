@@ -6,11 +6,13 @@ import { BookRoomSuccessPage } from '@/modules/bookings';
 import { bookingsService } from '@/modules/bookings/services/bookings.service';
 
 type PageProps = {
+  params: Promise<{ id: string }>;
   searchParams: Promise<{ id: string; orderCode?: string }>;
 };
 
-export default async function Page({ searchParams }: PageProps) {
-  const { id: bookingId, orderCode } = await searchParams;
+export default async function Page({ params, searchParams }: PageProps) {
+  const { id: bookingId } = await params;
+  const { orderCode } = await searchParams;
   const queryClient = getQueryClient();
 
   await queryClient.prefetchQuery({
